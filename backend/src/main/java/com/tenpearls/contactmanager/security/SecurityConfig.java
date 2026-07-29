@@ -30,16 +30,25 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomUserDetailsService customUserDetailsService;
-    private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
+    private final ObjectMapper objectMapper;
 
     @Value("${spring.h2.console.enabled:false}")
     private boolean h2ConsoleEnabled;
 
+    /**
+     * Constructs SecurityConfig with its dependencies.
+     *
+     * @param jwtAuthenticationFilter    the JWT authentication filter
+     * @param customUserDetailsService   the custom user details service
+     * @param objectMapper               the Spring-configured ObjectMapper bean
+     */
     public SecurityConfig(
             JwtAuthenticationFilter jwtAuthenticationFilter,
-            CustomUserDetailsService customUserDetailsService) {
+            CustomUserDetailsService customUserDetailsService,
+            ObjectMapper objectMapper) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.customUserDetailsService = customUserDetailsService;
+        this.objectMapper = objectMapper;
     }
 
     @Bean
