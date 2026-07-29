@@ -66,7 +66,7 @@ public class User {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (o == null || org.hibernate.Hibernate.getClass(this) != org.hibernate.Hibernate.getClass(o)) return false;
         User other = (User) o;
         if (this.id == null || other.id == null) return false;
         return this.id.equals(other.id);
@@ -74,6 +74,6 @@ public class User {
 
     @Override
     public int hashCode() {
-        return getClass().hashCode();
+        return org.hibernate.Hibernate.getClass(this).hashCode();
     }
 }
