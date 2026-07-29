@@ -59,8 +59,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
+        } catch (UsernameNotFoundException ex) {
+            log.error("Authentication failed: user no longer exists");
+            SecurityContextHolder.clearContext();
+            throw ex;
         } catch (Exception ex) {
-            log.error("Could not set user authentication in security context");
+            log.error("Unexpected authentication infrastructure failure");
+            SecurityContextHolder.clearContext();
+            throw new ServletException("Unexpected authentication infrastructure failure", ex);
         }
 
         filterChain.doFilter(request, response);
@@ -74,7 +80,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      */
     private String getJwtFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
-        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
+        if (StringUtils.hasText(bearerToken) && bearerToken.regionMatches(true, 0, "Bearer ", 0, 7)) {
             return bearerToken.substring(7);
         }
         return null;

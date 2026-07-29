@@ -1,14 +1,12 @@
 package com.tenpearls.contactmanager.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString(exclude = "token")
 public class AuthResponse {
     private String token;
     @Builder.Default
