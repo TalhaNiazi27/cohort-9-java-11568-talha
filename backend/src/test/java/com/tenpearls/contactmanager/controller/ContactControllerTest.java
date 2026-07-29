@@ -17,8 +17,11 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.Collections;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -109,5 +112,48 @@ class ContactControllerTest {
                 .andExpect(jsonPath("$.message").value("Validation failed"));
 
         verify(contactService, never()).createContact(any(ContactRequest.class), anyString());
+    }
+
+    @Test
+    @WithMockUser(username = "user@example.com")
+    void getContact_Success() throws Exception {
+        ContactResponse response = ContactResponse.builder()
+                .id(1L)
+                .firstName("John")
+                .lastName("Doe")
+                .title("CEO")
+                .build();
+
+        when(contactService.getContact(eq(1L), eq("user@example.com"))).thenReturn(response);
+
+        mockMvc.perform(get("/api/contacts/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.firstName").value("John"))
+                .andExpect(jsonPath("$.lastName").value("Doe"));
+
+        verify(contactService, times(1)).getContact(eq(1L), eq("user@example.com"));
+    }
+
+    @Test
+    void getContact_Unauthenticated_Returns401() throws Exception {
+        mockMvc.perform(get("/api/contacts/1"))
+                .andExpect(status().isUnauthorized());
+
+        verify(contactService, never()).getContact(anyLong(), anyString());
+    }
+
+    @Test
+    @WithMockUser(username = "user@example.com")
+    void getContact_NotFound_Returns404() throws Exception {
+        when(contactService.getContact(eq(999L), eq("user@example.com")))
+                .thenThrow(new com.tenpearls.contactmanager.exception.ResourceNotFoundException("Contact not found"));
+
+        mockMvc.perform(get("/api/contacts/999"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error").value("Not Found"))
+                .andExpect(jsonPath("$.message").value("Contact not found"));
+
+        verify(contactService, times(1)).getContact(eq(999L), eq("user@example.com"));
     }
 }

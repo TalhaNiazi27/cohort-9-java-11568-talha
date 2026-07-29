@@ -45,4 +45,22 @@ public class ContactController {
         ContactResponse response = contactService.createContact(contactRequest, principal.getName());
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
+
+    /**
+     * Retrieves details of a specific contact by ID.
+     *
+     * @param principal the authenticated principal context
+     * @param id        the ID of the contact to retrieve
+     * @return the contact details response
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<ContactResponse> getContact(
+            Principal principal,
+            @PathVariable Long id) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        ContactResponse response = contactService.getContact(id, principal.getName());
+        return ResponseEntity.ok(response);
+    }
 }
