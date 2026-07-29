@@ -86,7 +86,7 @@ public class UserServiceImpl implements UserService {
 
         User savedUser;
         try {
-            savedUser = userRepository.save(user);
+            savedUser = userRepository.saveAndFlush(user);
         } catch (DataIntegrityViolationException ex) {
             throw new ResourceAlreadyExistsException("Email or phone number is already registered");
         }

@@ -26,9 +26,8 @@ Files to commit:
 - `backend/src/main/java/.../service/UserService.java`
 - `backend/src/main/java/.../service/UserServiceImpl.java`
 
-**Command to run on Thursday:**
+**Command to run on Thursday (from the repository root):**
 ```bash
-cd "/Users/apple/Documents/10 Pearls InternShip"
 git add backend/src/main/java/com/tenpearls/contactmanager/model/ \
         backend/src/main/java/com/tenpearls/contactmanager/repository/ \
         backend/src/main/java/com/tenpearls/contactmanager/dto/ \
@@ -52,9 +51,8 @@ Files to commit:
 - `backend/src/test/.../controller/AuthControllerTest.java`
 - `backend/src/test/.../service/UserServiceImplTest.java`
 
-**Command to run on Friday:**
+**Command to run on Friday (from the repository root):**
 ```bash
-cd "/Users/apple/Documents/10 Pearls InternShip"
 git add backend/src/main/java/com/tenpearls/contactmanager/controller/ \
         backend/src/main/java/com/tenpearls/contactmanager/exception/ \
         backend/src/test/

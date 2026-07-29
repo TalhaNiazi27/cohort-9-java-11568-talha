@@ -12,7 +12,6 @@ import lombok.*;
 @Getter
 @Setter
 @ToString(exclude = "contact")
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -23,7 +22,6 @@ public class Email {
      */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @EqualsAndHashCode.Include
     private Long id;
 
     /**
@@ -45,4 +43,18 @@ public class Email {
      */
     @Column(nullable = false)
     private String label;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Email other = (Email) o;
+        if (this.id == null || other.id == null) return false;
+        return this.id.equals(other.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
 }

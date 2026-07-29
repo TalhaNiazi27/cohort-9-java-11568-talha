@@ -1,9 +1,7 @@
 package com.tenpearls.contactmanager.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Data
 @NoArgsConstructor
@@ -14,5 +12,6 @@ public class LoginRequest {
     private String username;
 
     @NotBlank(message = "Password is required")
+    @ToString.Exclude
     private String password;
 }
