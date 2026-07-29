@@ -61,7 +61,7 @@ erDiagram
 ```
 
 ### Folder Structure Layout
-```
+```text
 / (Workspace Root)
 ├── .coderabbit.yaml
 ├── README.md

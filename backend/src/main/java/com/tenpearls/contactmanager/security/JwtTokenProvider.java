@@ -16,7 +16,7 @@ import java.util.Date;
 @Slf4j
 public class JwtTokenProvider {
 
-    private final Key key;
+    private final javax.crypto.SecretKey key;
     private final long jwtExpirationInMs;
 
     public JwtTokenProvider(
@@ -25,48 +25,68 @@ public class JwtTokenProvider {
         if (jwtSecret == null || jwtSecret.trim().isEmpty()) {
             throw new IllegalArgumentException("JWT signing secret key cannot be null or empty. Please configure app.jwt.secret.");
         }
-        this.key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+        try {
+            this.key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+        } catch (io.jsonwebtoken.security.WeakKeyException ex) {
+            throw new IllegalStateException("app.jwt.secret must be at least 256 bits (32 bytes) for HS256", ex);
+        }
         this.jwtExpirationInMs = jwtExpirationInMs;
     }
 
-    // Generate token for a user session
+    /**
+     * Generates a token for a user session.
+     *
+     * @param authentication the authentication object
+     * @return the generated JWT token, or null if principal is incompatible
+     */
     public String generateToken(Authentication authentication) {
+        if (authentication == null || !(authentication.getPrincipal() instanceof UserDetails)) {
+            log.error("Authentication principal is not an instance of UserDetails");
+            return null;
+        }
         UserDetails userPrincipal = (UserDetails) authentication.getPrincipal();
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
 
         return Jwts.builder()
-                .setSubject(userPrincipal.getUsername())
-                .setIssuedAt(new Date())
-                .setExpiration(expiryDate)
-                .signWith(key, SignatureAlgorithm.HS256)
+                .subject(userPrincipal.getUsername())
+                .issuedAt(now)
+                .expiration(expiryDate)
+                .signWith(key)
                 .compact();
     }
 
-    // Retrieve username/identifier from the token
+    /**
+     * Retrieves username/identifier from the token.
+     *
+     * @param token the JWT token
+     * @return the subject username
+     */
     public String getUsernameFromJWT(String token) {
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(key)
+        Claims claims = Jwts.parser()
+                .verifyWith(key)
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token)
+                .getPayload();
 
         return claims.getSubject();
     }
 
-    // Validate the token and catch all potential exceptions (important for CodeRabbit)
+    /**
+     * Validate the token and catch all JJWT parsing/validation exceptions.
+     *
+     * @param authToken the JWT token to validate
+     * @return true if valid, false otherwise
+     */
     public boolean validateToken(String authToken) {
         try {
-            Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(authToken);
+            Jwts.parser()
+                    .verifyWith(key)
+                    .build()
+                    .parseSignedClaims(authToken);
             return true;
-        } catch (SecurityException | MalformedJwtException ex) {
-            log.error("Invalid JWT signature: {}", ex.getMessage());
-        } catch (ExpiredJwtException ex) {
-            log.error("Expired JWT token: {}", ex.getMessage());
-        } catch (UnsupportedJwtException ex) {
-            log.error("Unsupported JWT token: {}", ex.getMessage());
-        } catch (IllegalArgumentException ex) {
-            log.error("JWT claims string is empty: {}", ex.getMessage());
+        } catch (JwtException | IllegalArgumentException ex) {
+            log.error("JWT validation failed: {}", ex.getMessage());
         }
         return false;
     }

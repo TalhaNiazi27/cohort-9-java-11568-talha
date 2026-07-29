@@ -76,7 +76,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         if (h2ConsoleEnabled) {
-            http.headers(headers -> headers.frameOptions(frame -> frame.disable()));
+            http.headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
         }
 
         http.authorizeHttpRequests(auth -> {
@@ -97,7 +97,11 @@ public class SecurityConfig {
                                     .message("Full authentication is required to access this resource")
                                     .path(request.getRequestURI())
                                     .build();
-                            objectMapper.writeValue(response.getOutputStream(), errorResponse);
+                            try {
+                                objectMapper.writeValue(response.getOutputStream(), errorResponse);
+                            } catch (Exception e) {
+                                response.getWriter().write("{\"status\":401,\"error\":\"Unauthorized\",\"message\":\"Full authentication is required\"}");
+                            }
                         })
                         .accessDeniedHandler((request, response, accessDeniedException) -> {
                             response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN);
@@ -109,7 +113,11 @@ public class SecurityConfig {
                                     .message("Access denied")
                                     .path(request.getRequestURI())
                                     .build();
-                            objectMapper.writeValue(response.getOutputStream(), errorResponse);
+                            try {
+                                objectMapper.writeValue(response.getOutputStream(), errorResponse);
+                            } catch (Exception e) {
+                                response.getWriter().write("{\"status\":403,\"error\":\"Forbidden\",\"message\":\"Access denied\"}");
+                            }
                         })
                 )
                 .authenticationProvider(authenticationProvider())

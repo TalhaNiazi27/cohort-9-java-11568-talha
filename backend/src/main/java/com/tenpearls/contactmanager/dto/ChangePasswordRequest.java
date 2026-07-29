@@ -2,13 +2,12 @@ package com.tenpearls.contactmanager.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(exclude = {"currentPassword", "newPassword"})
 public class ChangePasswordRequest {
 
     @NotBlank(message = "Current password is required")

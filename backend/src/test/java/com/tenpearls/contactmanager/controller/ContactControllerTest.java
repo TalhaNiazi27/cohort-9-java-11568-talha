@@ -105,8 +105,8 @@ class ContactControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("Bad Request"))
-                .andExpect(jsonPath("$.message").value("Validation failed"));
+                .andExpect(jsonPath("$.error").value("Bad Request (Validation Failed)"))
+                .andExpect(jsonPath("$.message").value("First name is required"));
 
         verify(contactService, never()).createContact(any(ContactRequest.class), anyString());
     }

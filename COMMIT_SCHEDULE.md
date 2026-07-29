@@ -1,6 +1,6 @@
 # 📅 Week 1 Commit Schedule
 
-## ✅ Wednesday July 22 — DONE
+## ✅ Wednesday July 22, 2026 — DONE
 **Commit:** `feat: initialize Spring Boot backend with JWT security and JPA configuration`
 Files committed:
 - `backend/pom.xml` (project dependencies)
@@ -13,7 +13,7 @@ Files committed:
 
 ---
 
-## ⏳ Thursday July 24 — TODO
+## ⏳ Thursday July 23, 2026 — TODO
 **Commit:** `feat: add User entity, repository, DTOs and service layer`
 Files to commit:
 - `backend/src/main/java/.../model/User.java`
@@ -38,7 +38,7 @@ git push origin feature/setup-auth-backend
 
 ---
 
-## ⏳ Friday July 25 — TODO (before your meeting!)
+## ⏳ Friday July 24, 2026 — TODO (before your meeting!)
 **Commit:** `feat: add auth REST controller, exception handling and unit tests`
 Files to commit:
 - `backend/src/main/java/.../controller/AuthController.java`
