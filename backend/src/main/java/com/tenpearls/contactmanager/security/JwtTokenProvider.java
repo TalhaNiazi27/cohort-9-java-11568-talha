@@ -69,6 +69,7 @@ public class JwtTokenProvider {
      * Retrieves username/identifier from the token.
      *
      * @param token the JWT token
+<<<<<<< HEAD
      * @return the subject username, or null if token is invalid
      */
     public String getUsernameFromJWT(String token) {
