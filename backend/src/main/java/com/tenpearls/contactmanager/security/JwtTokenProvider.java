@@ -20,9 +20,14 @@ public class JwtTokenProvider {
     private final long jwtExpirationInMs;
 
     public JwtTokenProvider(
-            @Value("${app.jwt.secret}") String jwtSecret,
+            @Value("${app.jwt.secret:}") String jwtSecret,
             @Value("${app.jwt.expiration-ms}") long jwtExpirationInMs) {
-        this.key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+        if (jwtSecret == null || jwtSecret.trim().isEmpty()) {
+            log.warn("JWT secret is not configured. Generating a secure random key for this runtime session.");
+            this.key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+        } else {
+            this.key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+        }
         this.jwtExpirationInMs = jwtExpirationInMs;
     }
 
