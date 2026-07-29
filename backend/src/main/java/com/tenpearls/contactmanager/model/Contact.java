@@ -15,7 +15,6 @@ import java.util.List;
 @Getter
 @Setter
 @ToString(exclude = {"user", "emails", "phones"})
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -26,7 +25,6 @@ public class Contact {
      */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @EqualsAndHashCode.Include
     private Long id;
 
     /**
@@ -95,5 +93,19 @@ public class Contact {
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Contact other = (Contact) o;
+        if (this.id == null || other.id == null) return false;
+        return this.id.equals(other.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }

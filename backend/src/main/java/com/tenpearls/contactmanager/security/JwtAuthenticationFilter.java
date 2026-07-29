@@ -16,6 +16,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+/**
+ * Request filter that extracts JWT token, validates it, loads the user,
+ * and sets authentication details in the security context.
+ */
 @Component
 @Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -23,11 +27,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider tokenProvider;
     private final CustomUserDetailsService customUserDetailsService;
 
+    /**
+     * Constructs JwtAuthenticationFilter with provider and user details service.
+     *
+     * @param tokenProvider            token provider
+     * @param customUserDetailsService custom user details service
+     */
     public JwtAuthenticationFilter(JwtTokenProvider tokenProvider, CustomUserDetailsService customUserDetailsService) {
         this.tokenProvider = tokenProvider;
         this.customUserDetailsService = customUserDetailsService;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     protected void doFilterInternal(
             @NonNull HttpServletRequest request,
@@ -47,12 +60,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         } catch (Exception ex) {
-            log.error("Could not set user authentication in security context: {}", ex.getMessage());
+            log.error("Could not set user authentication in security context");
         }
 
         filterChain.doFilter(request, response);
     }
 
+    /**
+     * Extracts the JWT token from the Authorization header of the request.
+     *
+     * @param request the HTTP request
+     * @return the JWT token string, or null if not found
+     */
     private String getJwtFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {

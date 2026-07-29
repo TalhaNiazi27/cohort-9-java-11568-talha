@@ -65,9 +65,9 @@ erDiagram
 / (Workspace Root)
 ├── .coderabbit.yaml
 ├── README.md
-├── backend/            <-- Spring Boot Gradle/Maven Project
+├── backend/            <-- Spring Boot Maven Project
 │   ├── src/
-│   └── build.gradle    <-- Backend configuration
+│   └── pom.xml         <-- Backend Maven configuration
 └── frontend/           <-- React.js Vite Project
     ├── src/
     └── package.json    <-- Frontend configuration
@@ -153,7 +153,7 @@ We will open a separate Git branch and Pull Request for each phase of the projec
 ## Verification Plan
 
 ### Automated Tests
-* Run JUnit & Mockito backend unit tests: `cd backend && mvn test` (or `./gradlew test`).
+* Run JUnit & Mockito backend unit tests: `cd backend && ./mvnw test`.
 * Run frontend unit/compilation checks.
 
 ### Manual Verification

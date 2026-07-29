@@ -47,8 +47,8 @@ public class ContactServiceImpl implements ContactService {
     @Override
     @Transactional
     public ContactResponse createContact(ContactRequest request, String currentUserUsername) {
-        log.info("Creating a new contact for user: {}", currentUserUsername);
         User owner = fetchOwner(currentUserUsername);
+        log.info("Creating a new contact for user ID: {}", owner.getId());
 
         Contact contact = Contact.builder()
                 .user(owner)
@@ -88,8 +88,8 @@ public class ContactServiceImpl implements ContactService {
     @Override
     @Transactional(readOnly = true)
     public ContactResponse getContact(Long id, String currentUserUsername) {
-        log.info("Fetching contact ID: {} for user: {}", id, currentUserUsername);
         User owner = fetchOwner(currentUserUsername);
+        log.info("Fetching contact ID: {} for user ID: {}", id, owner.getId());
         Contact contact = fetchContactAndVerifyOwner(id, owner);
         return mapToContactResponse(contact);
     }
@@ -100,8 +100,8 @@ public class ContactServiceImpl implements ContactService {
     @Override
     @Transactional
     public ContactResponse updateContact(Long id, ContactRequest request, String currentUserUsername) {
-        log.info("Updating contact ID: {} for user: {}", id, currentUserUsername);
         User owner = fetchOwner(currentUserUsername);
+        log.info("Updating contact ID: {} for user ID: {}", id, owner.getId());
         Contact contact = fetchContactAndVerifyOwner(id, owner);
 
         contact.setFirstName(request.getFirstName());
@@ -143,8 +143,8 @@ public class ContactServiceImpl implements ContactService {
     @Override
     @Transactional
     public void deleteContact(Long id, String currentUserUsername) {
-        log.info("Deleting contact ID: {} for user: {}", id, currentUserUsername);
         User owner = fetchOwner(currentUserUsername);
+        log.info("Deleting contact ID: {} for user ID: {}", id, owner.getId());
         Contact contact = fetchContactAndVerifyOwner(id, owner);
         contactRepository.delete(contact);
         log.info("Contact ID: {} deleted successfully", id);
@@ -156,8 +156,8 @@ public class ContactServiceImpl implements ContactService {
     @Override
     @Transactional(readOnly = true)
     public Page<ContactResponse> searchContacts(String search, int page, int size, String currentUserUsername) {
-        log.info("Searching contacts with keyword: '{}', page: {}, size: {} for user: {}", search, page, size, currentUserUsername);
         User owner = fetchOwner(currentUserUsername);
+        log.info("Searching contacts for user ID: {}, page: {}, size: {}", owner.getId(), page, size);
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("firstName").ascending());
 
