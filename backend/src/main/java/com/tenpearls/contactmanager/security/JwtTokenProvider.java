@@ -60,16 +60,21 @@ public class JwtTokenProvider {
      * Retrieves username/identifier from the token.
      *
      * @param token the JWT token
-     * @return the subject username
+     * @return the subject username, or null if token is invalid
      */
     public String getUsernameFromJWT(String token) {
-        Claims claims = Jwts.parser()
-                .verifyWith(key)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+        try {
+            Claims claims = Jwts.parser()
+                    .verifyWith(key)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
 
-        return claims.getSubject();
+            return claims.getSubject();
+        } catch (JwtException | IllegalArgumentException ex) {
+            log.error("Failed to parse JWT token: {}", ex.getMessage());
+            return null;
+        }
     }
 
     /**
