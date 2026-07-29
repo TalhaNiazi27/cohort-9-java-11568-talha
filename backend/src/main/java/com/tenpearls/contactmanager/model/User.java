@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "users")
-@Data
+@Getter
 @ToString(exclude = "password")
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @NoArgsConstructor
@@ -29,17 +29,20 @@ public class User {
     /**
      * Optional unique email address for registration and login.
      */
+    @Setter
     private String email;
 
     /**
      * Optional unique phone number for registration and login.
      */
+    @Setter
     private String phone;
 
     /**
      * Encrypted hashed password.
      */
     @Column(nullable = false)
+    @Setter
     private String password;
 
     /**
