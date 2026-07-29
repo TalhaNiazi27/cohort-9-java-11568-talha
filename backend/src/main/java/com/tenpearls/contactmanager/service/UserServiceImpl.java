@@ -19,6 +19,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+/**
+ * Service implementation containing core business logic for user registration,
+ * authentication, profile retrieval, and password updates.
+ */
 @Service
 @Slf4j
 public class UserServiceImpl implements UserService {
@@ -28,6 +32,14 @@ public class UserServiceImpl implements UserService {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider tokenProvider;
 
+    /**
+     * Constructs UserServiceImpl with its required dependencies.
+     *
+     * @param userRepository        repository for database user transactions
+     * @param passwordEncoder       encoder for hashing passwords
+     * @param authenticationManager authentication manager to perform login validation
+     * @param tokenProvider         provider for JWT token creation
+     */
     public UserServiceImpl(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
@@ -39,6 +51,9 @@ public class UserServiceImpl implements UserService {
         this.tokenProvider = tokenProvider;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     @Transactional
     public UserResponse register(RegisterRequest request) {
@@ -81,6 +96,9 @@ public class UserServiceImpl implements UserService {
         return mapToUserResponse(savedUser);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
@@ -112,6 +130,9 @@ public class UserServiceImpl implements UserService {
                 .build();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     @Transactional(readOnly = true)
     public UserResponse getCurrentUser(String username) {
@@ -119,6 +140,9 @@ public class UserServiceImpl implements UserService {
         return mapToUserResponse(user);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     @Transactional
     public void changePassword(String username, ChangePasswordRequest request) {
@@ -137,12 +161,24 @@ public class UserServiceImpl implements UserService {
         log.info("Password changed successfully for user ID: {}", user.getId());
     }
 
+    /**
+     * Helper method to look up a user by email or phone number.
+     *
+     * @param username the email or phone number query
+     * @return the user details entity
+     * @throws UsernameNotFoundException if no user matches the email or phone number
+     */
     private User findUserByUsername(String username) {
-        return userRepository.findByEmail(username)
-                .orElseGet(() -> userRepository.findByPhone(username)
-                        .orElseThrow(() -> new UsernameNotFoundException("User not found")));
+        return userRepository.findByEmailOrPhone(username, username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 
+    /**
+     * Maps a User entity into a UserResponse DTO.
+     *
+     * @param user the user data model
+     * @return the corresponding UserResponse DTO
+     */
     private UserResponse mapToUserResponse(User user) {
         return UserResponse.builder()
                 .id(user.getId())

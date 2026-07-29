@@ -1,6 +1,8 @@
 package com.tenpearls.contactmanager.security;
 
+import tools.jackson.databind.ObjectMapper;
 import com.tenpearls.contactmanager.exception.ErrorResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -18,6 +20,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 
@@ -27,6 +30,10 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomUserDetailsService customUserDetailsService;
+    private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
+
+    @Value("${spring.h2.console.enabled:false}")
+    private boolean h2ConsoleEnabled;
 
     public SecurityConfig(
             JwtAuthenticationFilter jwtAuthenticationFilter,
@@ -57,25 +64,43 @@ public class SecurityConfig {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable()) // Stateless authorization
-                .headers(headers -> headers.frameOptions(frame -> frame.disable())) // Enable H2 web console
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
-                        .requestMatchers("/h2-console/**").permitAll()
-                        .anyRequest().authenticated()
-                )
-                .exceptionHandling(exceptions -> exceptions
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+
+        if (h2ConsoleEnabled) {
+            http.headers(headers -> headers.frameOptions(frame -> frame.disable()));
+        }
+
+        http.authorizeHttpRequests(auth -> {
+            auth.requestMatchers("/api/auth/register", "/api/auth/login").permitAll();
+            if (h2ConsoleEnabled) {
+                auth.requestMatchers("/h2-console/**").permitAll();
+            }
+            auth.anyRequest().authenticated();
+        });
+        http.exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint((request, response, authException) -> {
                             response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED);
                             response.setContentType("application/json");
-                            String safePath = request.getRequestURI() != null ? request.getRequestURI().replace("\"", "\\\"") : "";
-                            response.getWriter().write("{\"timestamp\":\"" + java.time.LocalDateTime.now() + "\",\"status\":401,\"error\":\"Unauthorized\",\"message\":\"Full authentication is required to access this resource\",\"path\":\"" + safePath + "\"}");
+                            ErrorResponse errorResponse = ErrorResponse.builder()
+                                    .timestamp(LocalDateTime.now())
+                                    .status(401)
+                                    .error("Unauthorized")
+                                    .message("Full authentication is required to access this resource")
+                                    .path(request.getRequestURI())
+                                    .build();
+                            objectMapper.writeValue(response.getOutputStream(), errorResponse);
                         })
                         .accessDeniedHandler((request, response, accessDeniedException) -> {
                             response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN);
                             response.setContentType("application/json");
-                            String safePath = request.getRequestURI() != null ? request.getRequestURI().replace("\"", "\\\"") : "";
-                            response.getWriter().write("{\"timestamp\":\"" + java.time.LocalDateTime.now() + "\",\"status\":403,\"error\":\"Forbidden\",\"message\":\"Access denied\",\"path\":\"" + safePath + "\"}");
+                            ErrorResponse errorResponse = ErrorResponse.builder()
+                                    .timestamp(LocalDateTime.now())
+                                    .status(403)
+                                    .error("Forbidden")
+                                    .message("Access denied")
+                                    .path(request.getRequestURI())
+                                    .build();
+                            objectMapper.writeValue(response.getOutputStream(), errorResponse);
                         })
                 )
                 .authenticationProvider(authenticationProvider())

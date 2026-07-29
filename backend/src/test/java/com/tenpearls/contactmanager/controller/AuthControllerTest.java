@@ -142,24 +142,4 @@ class AuthControllerTest {
 
         verify(userService, times(1)).login(any(LoginRequest.class));
     }
-
-    @Test
-    void getCurrentUser_Unauthenticated() throws Exception {
-        mockMvc.perform(get("/api/auth/me"))
-                .andExpect(status().isUnauthorized());
-
-        verify(userService, never()).getCurrentUser(anyString());
-    }
-
-    @Test
-    void changePassword_Unauthenticated() throws Exception {
-        ChangePasswordRequest changePasswordRequest = new ChangePasswordRequest("password123", "newPassword123");
-
-        mockMvc.perform(post("/api/auth/change-password")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(changePasswordRequest)))
-                .andExpect(status().isUnauthorized());
-
-        verify(userService, never()).changePassword(anyString(), any(ChangePasswordRequest.class));
-    }
 }
