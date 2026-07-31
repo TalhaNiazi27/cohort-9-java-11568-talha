@@ -28,7 +28,7 @@ import java.util.Collections;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JwtTokenProvider tokenProvider;
     private final CustomUserDetailsService customUserDetailsService;
     private final ObjectMapper objectMapper;
 
@@ -38,15 +38,15 @@ public class SecurityConfig {
     /**
      * Constructs SecurityConfig with its dependencies.
      *
-     * @param jwtAuthenticationFilter    the JWT authentication filter
+     * @param tokenProvider              the JWT token provider
      * @param customUserDetailsService   the custom user details service
      * @param objectMapper               the Spring-configured ObjectMapper bean
      */
     public SecurityConfig(
-            JwtAuthenticationFilter jwtAuthenticationFilter,
+            JwtTokenProvider tokenProvider,
             CustomUserDetailsService customUserDetailsService,
             ObjectMapper objectMapper) {
-        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.tokenProvider = tokenProvider;
         this.customUserDetailsService = customUserDetailsService;
         this.objectMapper = objectMapper;
     }
@@ -70,6 +70,8 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        JwtAuthenticationFilter jwtAuthenticationFilter = new JwtAuthenticationFilter(tokenProvider, customUserDetailsService);
+
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable()) // Stateless authorization

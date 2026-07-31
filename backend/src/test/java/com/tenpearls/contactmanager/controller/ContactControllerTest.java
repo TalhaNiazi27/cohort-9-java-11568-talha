@@ -22,10 +22,22 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.security.core.userdetails.UserDetails;
+
 @WebMvcTest(ContactController.class)
-@Import({SecurityConfig.class, JwtAuthenticationFilter.class})
+@Import(SecurityConfig.class)
 @AutoConfigureMockMvc(addFilters = true)
 class ContactControllerTest {
+
+    @TestConfiguration
+    static class TestConfig {
+        @Bean
+        public ObjectMapper objectMapper() {
+            return new ObjectMapper();
+        }
+    }
 
     @Autowired
     private MockMvc mockMvc;
@@ -42,9 +54,21 @@ class ContactControllerTest {
     @MockitoBean
     private JwtTokenProvider tokenProvider;
 
+    private void mockAuthentication() {
+        when(tokenProvider.validateToken(anyString())).thenReturn(true);
+        when(tokenProvider.getUsernameFromJWT(anyString())).thenReturn("user@example.com");
+
+        org.springframework.security.core.userdetails.UserDetails userDetails = org.springframework.security.core.userdetails.User.withUsername("user@example.com")
+                .password("password")
+                .authorities(Collections.emptyList())
+                .build();
+        when(customUserDetailsService.loadUserByUsername(anyString())).thenReturn(userDetails);
+    }
+
     @Test
-    @WithMockUser(username = "user@example.com")
     void createContact_Success() throws Exception {
+        mockAuthentication();
+
         ContactRequest request = ContactRequest.builder()
                 .firstName("John")
                 .lastName("Doe")
@@ -65,6 +89,7 @@ class ContactControllerTest {
         when(contactService.createContact(any(ContactRequest.class), anyString())).thenReturn(response);
 
         mockMvc.perform(post("/api/contacts")
+                        .header("Authorization", "Bearer mock_token")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -94,14 +119,16 @@ class ContactControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "user@example.com")
     void createContact_InvalidInput_Returns400() throws Exception {
+        mockAuthentication();
+
         ContactRequest request = ContactRequest.builder()
                 .firstName("") // Invalid: blank
                 .lastName("Doe")
                 .build();
 
         mockMvc.perform(post("/api/contacts")
+                        .header("Authorization", "Bearer mock_token")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())

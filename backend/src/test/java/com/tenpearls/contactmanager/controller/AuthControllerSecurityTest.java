@@ -25,10 +25,21 @@ import org.springframework.context.annotation.Import;
 import com.tenpearls.contactmanager.security.SecurityConfig;
 import com.tenpearls.contactmanager.security.JwtAuthenticationFilter;
 
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+
 @WebMvcTest(AuthController.class)
-@Import({SecurityConfig.class, JwtAuthenticationFilter.class})
+@Import(SecurityConfig.class)
 @AutoConfigureMockMvc(addFilters = true) // Enable security filters to test actual security constraints
 class AuthControllerSecurityTest {
+
+    @TestConfiguration
+    static class TestConfig {
+        @Bean
+        public ObjectMapper objectMapper() {
+            return new ObjectMapper();
+        }
+    }
 
     @Autowired
     private MockMvc mockMvc;
