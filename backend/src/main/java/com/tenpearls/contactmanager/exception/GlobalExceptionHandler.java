@@ -14,105 +14,60 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
 
+    private ResponseEntity<ErrorResponse> buildResponse(HttpStatus status, String error, String message, WebRequest request) {
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(status.value())
+                .error(error)
+                .message(message)
+                .path(request.getDescription(false).replace("uri=", ""))
+                .build();
+        return new ResponseEntity<>(errorResponse, status);
+    }
+
     // Handle username not found (returns 401 to prevent user enumeration)
     @ExceptionHandler(UsernameNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleUsernameNotFoundException(UsernameNotFoundException ex, WebRequest request) {
         log.error("UsernameNotFoundException: {}", ex.getMessage());
-        ErrorResponse errorResponse = ErrorResponse.builder()
-                .timestamp(LocalDateTime.now())
-                .status(HttpStatus.UNAUTHORIZED.value())
-                .error("Unauthorized")
-                .message("Invalid email/phone or password")
-                .path(request.getDescription(false).replace("uri=", ""))
-                .build();
-        return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
+        return buildResponse(HttpStatus.UNAUTHORIZED, "Unauthorized", "Invalid email/phone or password", request);
     }
 
-    /**
-     * Handles ResourceNotFoundException and formats it into standard ErrorResponse.
-     *
-     * @param ex      the exception
-     * @param request the web request context
-     * @return 404 Not Found error response
-     */
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleResourceNotFoundException(ResourceNotFoundException ex, WebRequest request) {
         log.error("ResourceNotFoundException: {}", ex.getMessage());
-        ErrorResponse errorResponse = ErrorResponse.builder()
-                .timestamp(LocalDateTime.now())
-                .status(HttpStatus.NOT_FOUND.value())
-                .error("Not Found")
-                .message(ex.getMessage())
-                .path(request.getDescription(false).replace("uri=", ""))
-                .build();
-        return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+        return buildResponse(HttpStatus.NOT_FOUND, "Not Found", ex.getMessage(), request);
     }
 
-    // Handle bad requests (validation failures)
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<ErrorResponse> handleBadRequestException(BadRequestException ex, WebRequest request) {
         log.error("BadRequestException: {}", ex.getMessage());
-        ErrorResponse errorResponse = ErrorResponse.builder()
-                .timestamp(LocalDateTime.now())
-                .status(HttpStatus.BAD_REQUEST.value())
-                .error("Bad Request")
-                .message(ex.getMessage())
-                .path(request.getDescription(false).replace("uri=", ""))
-                .build();
-        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        return buildResponse(HttpStatus.BAD_REQUEST, "Bad Request", ex.getMessage(), request);
     }
 
-    // Handle registration duplication conflicts
     @ExceptionHandler(ResourceAlreadyExistsException.class)
     public ResponseEntity<ErrorResponse> handleResourceAlreadyExistsException(ResourceAlreadyExistsException ex, WebRequest request) {
         log.error("ResourceAlreadyExistsException: {}", ex.getMessage());
-        ErrorResponse errorResponse = ErrorResponse.builder()
-                .timestamp(LocalDateTime.now())
-                .status(HttpStatus.CONFLICT.value())
-                .error("Conflict")
-                .message(ex.getMessage())
-                .path(request.getDescription(false).replace("uri=", ""))
-                .build();
-        return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
+        return buildResponse(HttpStatus.CONFLICT, "Conflict", ex.getMessage(), request);
     }
 
-    // Handle security authentication failures
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseEntity<ErrorResponse> handleUnauthorizedException(UnauthorizedException ex, WebRequest request) {
         log.error("UnauthorizedException: {}", ex.getMessage());
-        ErrorResponse errorResponse = ErrorResponse.builder()
-                .timestamp(LocalDateTime.now())
-                .status(HttpStatus.UNAUTHORIZED.value())
-                .error("Unauthorized")
-                .message(ex.getMessage())
-                .path(request.getDescription(false).replace("uri=", ""))
-                .build();
-        return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
+        return buildResponse(HttpStatus.UNAUTHORIZED, "Unauthorized", "Authentication failed", request);
     }
 
-    // Handle Spring Security authentication bad credentials
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ErrorResponse> handleBadCredentialsException(BadCredentialsException ex, WebRequest request) {
         log.error("BadCredentialsException: {}", ex.getMessage());
-        ErrorResponse errorResponse = ErrorResponse.builder()
-                .timestamp(LocalDateTime.now())
-                .status(HttpStatus.UNAUTHORIZED.value())
-                .error("Unauthorized")
-                .message("Invalid email/phone or password")
-                .path(request.getDescription(false).replace("uri=", ""))
-                .build();
-        return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
+        return buildResponse(HttpStatus.UNAUTHORIZED, "Unauthorized", "Invalid email/phone or password", request);
     }
 
-    // Handle Spring validation errors (@Valid)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException ex, WebRequest request) {
         log.error("MethodArgumentNotValidException check failed");
@@ -124,55 +79,25 @@ public class GlobalExceptionHandler {
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining(", "));
 
-        ErrorResponse errorResponse = ErrorResponse.builder()
-                .timestamp(LocalDateTime.now())
-                .status(HttpStatus.BAD_REQUEST.value())
-                .error("Bad Request (Validation Failed)")
-                .message(validationErrors)
-                .path(request.getDescription(false).replace("uri=", ""))
-                .build();
-        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        return buildResponse(HttpStatus.BAD_REQUEST, "Bad Request (Validation Failed)", validationErrors, request);
     }
 
-    // Handle generic Spring Security authentication failures
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ErrorResponse> handleAuthenticationException(AuthenticationException ex, WebRequest request) {
-        log.error("AuthenticationException: {}", ex.getMessage());
-        ErrorResponse errorResponse = ErrorResponse.builder()
-                .timestamp(LocalDateTime.now())
-                .status(HttpStatus.UNAUTHORIZED.value())
-                .error("Unauthorized")
-                .message(ex.getMessage() != null ? ex.getMessage() : "Authentication failed")
-                .path(request.getDescription(false).replace("uri=", ""))
-                .build();
-        return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
+        log.error("AuthenticationException occurred");
+        return buildResponse(HttpStatus.UNAUTHORIZED, "Unauthorized", "Authentication failed", request);
     }
 
-    // Handle malformed JSON body
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(HttpMessageNotReadableException ex, WebRequest request) {
-        log.error("HttpMessageNotReadableException: {}", ex.getMessage());
-        ErrorResponse errorResponse = ErrorResponse.builder()
-                .timestamp(LocalDateTime.now())
-                .status(HttpStatus.BAD_REQUEST.value())
-                .error("Bad Request")
-                .message("Malformed JSON request body")
-                .path(request.getDescription(false).replace("uri=", ""))
-                .build();
-        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        log.error("HttpMessageNotReadableException: Malformed JSON request body");
+        return buildResponse(HttpStatus.BAD_REQUEST, "Bad Request", "Malformed JSON request body", request);
     }
 
     // Global catch-all handler for unexpected issues
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGlobalException(Exception ex, WebRequest request) {
         log.error("An unexpected error occurred: ", ex);
-        ErrorResponse errorResponse = ErrorResponse.builder()
-                .timestamp(LocalDateTime.now())
-                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-                .error("Internal Server Error")
-                .message("An unexpected error occurred on the server")
-                .path(request.getDescription(false).replace("uri=", ""))
-                .build();
-        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", "An unexpected error occurred on the server", request);
     }
 }

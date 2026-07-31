@@ -42,7 +42,7 @@ public class JwtTokenProvider {
     public String generateToken(Authentication authentication) {
         if (authentication == null || !(authentication.getPrincipal() instanceof UserDetails)) {
             log.error("Authentication principal is not an instance of UserDetails");
-            return null;
+            throw new IllegalArgumentException("Invalid authentication principal");
         }
         UserDetails userPrincipal = (UserDetails) authentication.getPrincipal();
         Date now = new Date();

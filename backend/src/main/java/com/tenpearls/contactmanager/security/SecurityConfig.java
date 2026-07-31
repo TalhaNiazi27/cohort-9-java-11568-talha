@@ -1,6 +1,6 @@
 package com.tenpearls.contactmanager.security;
 
-import tools.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tenpearls.contactmanager.exception.ErrorResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -28,7 +28,7 @@ import java.util.Collections;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JwtTokenProvider tokenProvider;
     private final CustomUserDetailsService customUserDetailsService;
     private final ObjectMapper objectMapper;
 
@@ -38,15 +38,15 @@ public class SecurityConfig {
     /**
      * Constructs SecurityConfig with its dependencies.
      *
-     * @param jwtAuthenticationFilter    the JWT authentication filter
+     * @param tokenProvider              the JWT token provider
      * @param customUserDetailsService   the custom user details service
      * @param objectMapper               the Spring-configured ObjectMapper bean
      */
     public SecurityConfig(
-            JwtAuthenticationFilter jwtAuthenticationFilter,
+            JwtTokenProvider tokenProvider,
             CustomUserDetailsService customUserDetailsService,
             ObjectMapper objectMapper) {
-        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.tokenProvider = tokenProvider;
         this.customUserDetailsService = customUserDetailsService;
         this.objectMapper = objectMapper;
     }
@@ -70,6 +70,8 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        JwtAuthenticationFilter jwtAuthenticationFilter = new JwtAuthenticationFilter(tokenProvider, customUserDetailsService);
+
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable()) // Stateless authorization
@@ -98,7 +100,8 @@ public class SecurityConfig {
                                     .path(request.getRequestURI())
                                     .build();
                             try {
-                                objectMapper.writeValue(response.getOutputStream(), errorResponse);
+                                String json = objectMapper.writeValueAsString(errorResponse);
+                                response.getWriter().write(json);
                             } catch (Exception e) {
                                 response.getWriter().write("{\"status\":401,\"error\":\"Unauthorized\",\"message\":\"Full authentication is required\"}");
                             }
@@ -114,7 +117,8 @@ public class SecurityConfig {
                                     .path(request.getRequestURI())
                                     .build();
                             try {
-                                objectMapper.writeValue(response.getOutputStream(), errorResponse);
+                                String json = objectMapper.writeValueAsString(errorResponse);
+                                response.getWriter().write(json);
                             } catch (Exception e) {
                                 response.getWriter().write("{\"status\":403,\"error\":\"Forbidden\",\"message\":\"Access denied\"}");
                             }

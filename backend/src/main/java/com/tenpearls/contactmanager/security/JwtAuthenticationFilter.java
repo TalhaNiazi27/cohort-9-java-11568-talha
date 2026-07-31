@@ -9,6 +9,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -20,7 +21,6 @@ import java.io.IOException;
  * Request filter that extracts JWT token, validates it, loads the user,
  * and sets authentication details in the security context.
  */
-@Component
 @Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
@@ -62,7 +62,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         } catch (UsernameNotFoundException ex) {
             log.error("Authentication failed: user no longer exists");
             SecurityContextHolder.clearContext();
-            throw ex;
         } catch (Exception ex) {
             log.error("Unexpected authentication infrastructure failure");
             SecurityContextHolder.clearContext();

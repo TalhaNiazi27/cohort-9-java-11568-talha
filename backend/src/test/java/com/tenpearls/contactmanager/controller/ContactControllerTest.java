@@ -13,6 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import com.tenpearls.contactmanager.exception.ResourceNotFoundException;
 
 import java.util.Collections;
 
@@ -25,10 +26,16 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.security.core.userdetails.UserDetails;
+
 @WebMvcTest(ContactController.class)
-@Import({SecurityConfig.class, JwtAuthenticationFilter.class})
+@Import(SecurityConfig.class)
 @AutoConfigureMockMvc(addFilters = true)
 class ContactControllerTest {
+
+
 
     @Autowired
     private MockMvc mockMvc;
@@ -45,9 +52,21 @@ class ContactControllerTest {
     @MockitoBean
     private JwtTokenProvider tokenProvider;
 
+    private void mockAuthentication() {
+        when(tokenProvider.validateToken(anyString())).thenReturn(true);
+        when(tokenProvider.getUsernameFromJWT(anyString())).thenReturn("user@example.com");
+
+        org.springframework.security.core.userdetails.UserDetails userDetails = org.springframework.security.core.userdetails.User.withUsername("user@example.com")
+                .password("password")
+                .authorities(Collections.emptyList())
+                .build();
+        when(customUserDetailsService.loadUserByUsername(anyString())).thenReturn(userDetails);
+    }
+
     @Test
-    @WithMockUser(username = "user@example.com")
     void createContact_Success() throws Exception {
+        mockAuthentication();
+
         ContactRequest request = ContactRequest.builder()
                 .firstName("John")
                 .lastName("Doe")
@@ -68,6 +87,7 @@ class ContactControllerTest {
         when(contactService.createContact(any(ContactRequest.class), anyString())).thenReturn(response);
 
         mockMvc.perform(post("/api/contacts")
+                        .header("Authorization", "Bearer mock_token")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -97,14 +117,16 @@ class ContactControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "user@example.com")
     void createContact_InvalidInput_Returns400() throws Exception {
+        mockAuthentication();
+
         ContactRequest request = ContactRequest.builder()
                 .firstName("") // Invalid: blank
                 .lastName("Doe")
                 .build();
 
         mockMvc.perform(post("/api/contacts")
+                        .header("Authorization", "Bearer mock_token")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
@@ -155,5 +177,23 @@ class ContactControllerTest {
                 .andExpect(jsonPath("$.message").value("Contact not found"));
 
         verify(contactService, times(1)).getContact(eq(999L), eq("user@example.com"));
+    }
+
+    @Test
+    void getContactById_CrossUserOwnership_ReturnsNotFound() throws Exception {
+        mockAuthentication(); // Set up standard user@example.com mock authentication
+
+        // When user@example.com tries to access a contact belonging to someone else, the service
+        // should throw a ResourceNotFoundException (to avoid leaking existence).
+        when(contactService.getContact(eq(1L), eq("user@example.com")))
+                .thenThrow(new ResourceNotFoundException("Contact not found"));
+
+        mockMvc.perform(get("/api/contacts/1")
+                        .header("Authorization", "Bearer mock_token"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error").value("Not Found"))
+                .andExpect(jsonPath("$.message").value("Contact not found"));
+
+        verify(contactService).getContact(1L, "user@example.com");
     }
 }

@@ -64,14 +64,14 @@ class UserServiceImplTest {
         when(userRepository.existsByEmail(anyString())).thenReturn(false);
         when(userRepository.existsByPhone(anyString())).thenReturn(false);
         when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
-        when(userRepository.save(any(User.class))).thenReturn(sampleUser);
+        when(userRepository.saveAndFlush(any(User.class))).thenReturn(sampleUser);
 
         UserResponse response = userService.register(registerRequest);
 
         assertNotNull(response);
         assertEquals(sampleUser.getEmail(), response.getEmail());
         assertEquals(sampleUser.getPhone(), response.getPhone());
-        verify(userRepository, times(1)).save(any(User.class));
+        verify(userRepository, times(1)).saveAndFlush(any(User.class));
     }
 
     @Test
@@ -79,7 +79,7 @@ class UserServiceImplTest {
         RegisterRequest invalidRequest = new RegisterRequest("", "", "password123");
 
         assertThrows(BadRequestException.class, () -> userService.register(invalidRequest));
-        verify(userRepository, never()).save(any(User.class));
+        verify(userRepository, never()).saveAndFlush(any(User.class));
     }
 
     @Test
@@ -87,7 +87,7 @@ class UserServiceImplTest {
         when(userRepository.existsByEmail(anyString())).thenReturn(true);
 
         assertThrows(ResourceAlreadyExistsException.class, () -> userService.register(registerRequest));
-        verify(userRepository, never()).save(any(User.class));
+        verify(userRepository, never()).saveAndFlush(any(User.class));
     }
 
     @Test
@@ -95,7 +95,7 @@ class UserServiceImplTest {
         Authentication authentication = mock(Authentication.class);
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(authentication);
         when(tokenProvider.generateToken(any(Authentication.class))).thenReturn("mockToken");
-        when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(sampleUser));
+        when(userRepository.findByEmailOrPhone(anyString(), anyString())).thenReturn(Optional.of(sampleUser));
 
         AuthResponse response = userService.login(loginRequest);
 
@@ -108,7 +108,7 @@ class UserServiceImplTest {
     @Test
     void changePassword_Success() {
         ChangePasswordRequest passwordRequest = new ChangePasswordRequest("password123", "newPassword123");
-        when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(sampleUser));
+        when(userRepository.findByEmailOrPhone(anyString(), anyString())).thenReturn(Optional.of(sampleUser));
         when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
         when(passwordEncoder.encode(anyString())).thenReturn("newEncodedPassword");
 
@@ -121,7 +121,7 @@ class UserServiceImplTest {
     @Test
     void changePassword_Failure_IncorrectCurrentPassword() {
         ChangePasswordRequest passwordRequest = new ChangePasswordRequest("wrongPassword", "newPassword123");
-        when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(sampleUser));
+        when(userRepository.findByEmailOrPhone(anyString(), anyString())).thenReturn(Optional.of(sampleUser));
         when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
 
         assertThrows(UnauthorizedException.class, () -> userService.changePassword("test@example.com", passwordRequest));
