@@ -263,4 +263,37 @@ class ContactControllerTest {
         mockMvc.perform(delete("/api/contacts/1"))
                 .andExpect(status().isUnauthorized());
     }
+
+    @Test
+    @WithMockUser(username = "user@example.com")
+    void searchContacts_Success() throws Exception {
+        ContactResponse response = ContactResponse.builder()
+                .id(1L)
+                .firstName("John")
+                .lastName("Doe")
+                .build();
+
+        org.springframework.data.domain.Page<ContactResponse> pageResponse = new org.springframework.data.domain.PageImpl<>(
+                java.util.Collections.singletonList(response),
+                org.springframework.data.domain.PageRequest.of(0, 10),
+                1);
+
+        when(contactService.searchContacts(anyString(), anyInt(), anyInt(), eq("user@example.com"))).thenReturn(pageResponse);
+
+        mockMvc.perform(get("/api/contacts")
+                        .param("search", "John")
+                        .param("page", "0")
+                        .param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].firstName").value("John"))
+                .andExpect(jsonPath("$.totalElements").value(1));
+
+        verify(contactService, times(1)).searchContacts(eq("John"), eq(0), eq(10), eq("user@example.com"));
+    }
+
+    @Test
+    void searchContacts_Unauthenticated_Returns401() throws Exception {
+        mockMvc.perform(get("/api/contacts"))
+                .andExpect(status().isUnauthorized());
+    }
 }
