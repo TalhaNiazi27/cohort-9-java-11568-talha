@@ -207,7 +207,6 @@ class ContactControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("Bad Request"));
     }
-
     @Test
     @WithMockUser(username = "user@example.com")
     void updateContact_Success() throws Exception {
