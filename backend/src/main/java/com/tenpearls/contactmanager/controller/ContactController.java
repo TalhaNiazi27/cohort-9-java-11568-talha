@@ -63,4 +63,42 @@ public class ContactController {
         ContactResponse response = contactService.getContact(id, principal.getName());
         return ResponseEntity.ok(response);
     }
+
+    /**
+     * Updates an existing contact by ID.
+     *
+     * @param principal      the authenticated principal context
+     * @param id             the ID of the contact to update
+     * @param contactRequest the updated contact details
+     * @return the updated contact details response
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<ContactResponse> updateContact(
+            Principal principal,
+            @PathVariable Long id,
+            @Valid @RequestBody ContactRequest contactRequest) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        ContactResponse response = contactService.updateContact(id, contactRequest, principal.getName());
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Deletes a specific contact by ID.
+     *
+     * @param principal the authenticated principal context
+     * @param id        the ID of the contact to delete
+     * @return empty response indicating success
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteContact(
+            Principal principal,
+            @PathVariable Long id) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        contactService.deleteContact(id, principal.getName());
+        return ResponseEntity.noContent().build();
+    }
 }

@@ -24,6 +24,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import org.springframework.boot.test.context.TestConfiguration;
@@ -204,5 +206,61 @@ class ContactControllerTest {
                         .header("Authorization", "Bearer mock_token"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("Bad Request"));
+    }
+
+    @Test
+    @WithMockUser(username = "user@example.com")
+    void updateContact_Success() throws Exception {
+        ContactRequest request = ContactRequest.builder()
+                .firstName("Jane")
+                .lastName("Doe")
+                .title("CTO")
+                .build();
+
+        ContactResponse response = ContactResponse.builder()
+                .id(1L)
+                .firstName("Jane")
+                .lastName("Doe")
+                .title("CTO")
+                .build();
+
+        when(contactService.updateContact(eq(1L), any(ContactRequest.class), eq("user@example.com"))).thenReturn(response);
+
+        mockMvc.perform(put("/api/contacts/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.firstName").value("Jane"))
+                .andExpect(jsonPath("$.title").value("CTO"));
+
+        verify(contactService, times(1)).updateContact(eq(1L), any(ContactRequest.class), eq("user@example.com"));
+    }
+
+    @Test
+    void updateContact_Unauthenticated_Returns401() throws Exception {
+        ContactRequest request = ContactRequest.builder()
+                .firstName("Jane")
+                .lastName("Doe")
+                .build();
+
+        mockMvc.perform(put("/api/contacts/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(username = "user@example.com")
+    void deleteContact_Success() throws Exception {
+        mockMvc.perform(delete("/api/contacts/1"))
+                .andExpect(status().isNoContent());
+
+        verify(contactService, times(1)).deleteContact(eq(1L), eq("user@example.com"));
+    }
+
+    @Test
+    void deleteContact_Unauthenticated_Returns401() throws Exception {
+        mockMvc.perform(delete("/api/contacts/1"))
+                .andExpect(status().isUnauthorized());
     }
 }
