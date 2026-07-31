@@ -196,4 +196,13 @@ class ContactControllerTest {
 
         verify(contactService).getContact(1L, "user@example.com");
     }
+
+    @Test
+    @WithMockUser(username = "user@example.com")
+    void getContact_InvalidIdType_Returns400() throws Exception {
+        mockMvc.perform(get("/api/contacts/not-a-number")
+                        .header("Authorization", "Bearer mock_token"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Bad Request"));
+    }
 }
