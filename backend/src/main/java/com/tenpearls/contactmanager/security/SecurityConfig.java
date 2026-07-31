@@ -99,12 +99,13 @@ public class SecurityConfig {
                                     .message("Full authentication is required to access this resource")
                                     .path(request.getRequestURI())
                                     .build();
+                            String json;
                             try {
-                                String json = objectMapper.writeValueAsString(errorResponse);
-                                response.getWriter().write(json);
-                            } catch (Exception e) {
-                                response.getWriter().write("{\"status\":401,\"error\":\"Unauthorized\",\"message\":\"Full authentication is required\"}");
+                                json = objectMapper.writeValueAsString(errorResponse);
+                            } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+                                json = "{\"status\":401,\"error\":\"Unauthorized\",\"message\":\"Full authentication is required\"}";
                             }
+                            response.getWriter().write(json);
                         })
                         .accessDeniedHandler((request, response, accessDeniedException) -> {
                             response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN);
@@ -116,12 +117,13 @@ public class SecurityConfig {
                                     .message("Access denied")
                                     .path(request.getRequestURI())
                                     .build();
+                            String json;
                             try {
-                                String json = objectMapper.writeValueAsString(errorResponse);
-                                response.getWriter().write(json);
-                            } catch (Exception e) {
-                                response.getWriter().write("{\"status\":403,\"error\":\"Forbidden\",\"message\":\"Access denied\"}");
+                                json = objectMapper.writeValueAsString(errorResponse);
+                            } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+                                json = "{\"status\":403,\"error\":\"Forbidden\",\"message\":\"Access denied\"}";
                             }
+                            response.getWriter().write(json);
                         })
                 )
                 .authenticationProvider(authenticationProvider())
