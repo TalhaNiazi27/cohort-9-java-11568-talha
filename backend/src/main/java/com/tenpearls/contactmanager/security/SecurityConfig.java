@@ -1,6 +1,6 @@
 package com.tenpearls.contactmanager.security;
 
-import tools.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tenpearls.contactmanager.exception.ErrorResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -28,18 +28,27 @@ import java.util.Collections;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JwtTokenProvider tokenProvider;
     private final CustomUserDetailsService customUserDetailsService;
-    private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
+    private final ObjectMapper objectMapper;
 
     @Value("${spring.h2.console.enabled:false}")
     private boolean h2ConsoleEnabled;
 
+    /**
+     * Constructs SecurityConfig with its dependencies.
+     *
+     * @param tokenProvider              the JWT token provider
+     * @param customUserDetailsService   the custom user details service
+     * @param objectMapper               the Spring-configured ObjectMapper bean
+     */
     public SecurityConfig(
-            JwtAuthenticationFilter jwtAuthenticationFilter,
-            CustomUserDetailsService customUserDetailsService) {
-        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+            JwtTokenProvider tokenProvider,
+            CustomUserDetailsService customUserDetailsService,
+            ObjectMapper objectMapper) {
+        this.tokenProvider = tokenProvider;
         this.customUserDetailsService = customUserDetailsService;
+        this.objectMapper = objectMapper;
     }
 
     @Bean
@@ -61,13 +70,15 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        JwtAuthenticationFilter jwtAuthenticationFilter = new JwtAuthenticationFilter(tokenProvider, customUserDetailsService);
+
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable()) // Stateless authorization
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         if (h2ConsoleEnabled) {
-            http.headers(headers -> headers.frameOptions(frame -> frame.disable()));
+            http.headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
         }
 
         http.authorizeHttpRequests(auth -> {
@@ -88,7 +99,13 @@ public class SecurityConfig {
                                     .message("Full authentication is required to access this resource")
                                     .path(request.getRequestURI())
                                     .build();
-                            objectMapper.writeValue(response.getOutputStream(), errorResponse);
+                            String json;
+                            try {
+                                json = objectMapper.writeValueAsString(errorResponse);
+                            } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+                                json = "{\"status\":401,\"error\":\"Unauthorized\",\"message\":\"Full authentication is required\"}";
+                            }
+                            response.getWriter().write(json);
                         })
                         .accessDeniedHandler((request, response, accessDeniedException) -> {
                             response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN);
@@ -100,7 +117,13 @@ public class SecurityConfig {
                                     .message("Access denied")
                                     .path(request.getRequestURI())
                                     .build();
-                            objectMapper.writeValue(response.getOutputStream(), errorResponse);
+                            String json;
+                            try {
+                                json = objectMapper.writeValueAsString(errorResponse);
+                            } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+                                json = "{\"status\":403,\"error\":\"Forbidden\",\"message\":\"Access denied\"}";
+                            }
+                            response.getWriter().write(json);
                         })
                 )
                 .authenticationProvider(authenticationProvider())
