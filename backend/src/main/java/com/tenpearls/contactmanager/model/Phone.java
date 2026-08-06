@@ -54,6 +54,6 @@ public class Phone {
 
     @Override
     public int hashCode() {
-        return getClass().hashCode();
+        return Phone.class.hashCode();
     }
 }

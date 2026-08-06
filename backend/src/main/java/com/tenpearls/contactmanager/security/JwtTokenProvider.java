@@ -30,6 +30,9 @@ public class JwtTokenProvider {
         } catch (io.jsonwebtoken.security.WeakKeyException ex) {
             throw new IllegalStateException("app.jwt.secret must be at least 256 bits (32 bytes) for HS256", ex);
         }
+        if (jwtExpirationInMs <= 0) {
+            throw new IllegalArgumentException("app.jwt.expiration-ms must be a positive number of milliseconds.");
+        }
         this.jwtExpirationInMs = jwtExpirationInMs;
     }
 
@@ -37,7 +40,8 @@ public class JwtTokenProvider {
      * Generates a token for a user session.
      *
      * @param authentication the authentication object
-     * @return the generated JWT token, or null if principal is incompatible
+     * @return the generated JWT token
+     * @throws IllegalArgumentException if the authentication is null or the principal is not a UserDetails
      */
     public String generateToken(Authentication authentication) {
         if (authentication == null || !(authentication.getPrincipal() instanceof UserDetails)) {
@@ -45,11 +49,16 @@ public class JwtTokenProvider {
             throw new IllegalArgumentException("Invalid authentication principal");
         }
         UserDetails userPrincipal = (UserDetails) authentication.getPrincipal();
+        String username = userPrincipal.getUsername();
+        if (username == null) {
+            throw new IllegalArgumentException("Cannot generate JWT: UserDetails username is null");
+        }
+
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
 
         return Jwts.builder()
-                .subject(userPrincipal.getUsername())
+                .subject(username)
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(key)
@@ -72,7 +81,7 @@ public class JwtTokenProvider {
 
             return claims.getSubject();
         } catch (JwtException | IllegalArgumentException ex) {
-            log.error("Failed to parse JWT token: {}", ex.getMessage());
+            log.debug("Failed to parse JWT token: {}", ex.getMessage());
             return null;
         }
     }
@@ -91,7 +100,7 @@ public class JwtTokenProvider {
                     .parseSignedClaims(authToken);
             return true;
         } catch (JwtException | IllegalArgumentException ex) {
-            log.error("JWT validation failed: {}", ex.getMessage());
+            log.debug("JWT validation failed: {}", ex.getMessage());
         }
         return false;
     }

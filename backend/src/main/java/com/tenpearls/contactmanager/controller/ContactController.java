@@ -15,6 +15,7 @@ import java.security.Principal;
  */
 @RestController
 @RequestMapping("/api/contacts")
+@org.springframework.validation.annotation.Validated
 public class ContactController {
 
     private final ContactService contactService;
@@ -115,8 +116,8 @@ public class ContactController {
     public ResponseEntity<org.springframework.data.domain.Page<ContactResponse>> searchContacts(
             Principal principal,
             @RequestParam(required = false, defaultValue = "") String search,
-            @RequestParam(required = false, defaultValue = "0") int page,
-            @RequestParam(required = false, defaultValue = "10") int size) {
+            @RequestParam(required = false, defaultValue = "0") @jakarta.validation.constraints.Min(0) int page,
+            @RequestParam(required = false, defaultValue = "10") @jakarta.validation.constraints.Min(1) @jakarta.validation.constraints.Max(100) int size) {
         if (principal == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }

@@ -35,7 +35,22 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @param phone the phone query
      * @return an Optional containing the User if found, empty otherwise
      */
-    Optional<User> findByEmailOrPhone(String email, String phone);
+    java.util.List<User> findAllByEmailOrPhone(String email, String phone);
+
+    /**
+     * Finds a single user by email or phone. 
+     * Throws an exception if multiple users are found due to ambiguous identifiers.
+     */
+    default Optional<User> findByEmailOrPhone(String email, String phone) {
+        java.util.List<User> users = findAllByEmailOrPhone(email, phone);
+        if (users.isEmpty()) {
+            return Optional.empty();
+        }
+        if (users.size() > 1) {
+            throw new org.springframework.dao.DataIntegrityViolationException("Ambiguous identifier: matches multiple distinct users");
+        }
+        return Optional.of(users.get(0));
+    }
 
     /**
      * Checks if a user exists with the specified email address.
