@@ -33,7 +33,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
      *
      * @param email the email query
      * @param phone the phone query
-     * @return an Optional containing the User if found, empty otherwise
+     * @return a List of Users matching the email or phone criteria. Multiple users may match if the identifiers are ambiguous.
      */
     java.util.List<User> findAllByEmailOrPhone(String email, String phone);
 
