@@ -5,9 +5,12 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
+import com.tenpearls.contactmanager.validation.EmailOrPhoneRequired;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@EmailOrPhoneRequired
 public class RegisterRequest {
 
     @Email(message = "Invalid email format")

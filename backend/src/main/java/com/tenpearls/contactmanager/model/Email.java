@@ -54,6 +54,6 @@ public class Email {
 
     @Override
     public int hashCode() {
-        return getClass().hashCode();
+        return Email.class.hashCode();
     }
 }

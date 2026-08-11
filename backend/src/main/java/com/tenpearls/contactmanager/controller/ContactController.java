@@ -15,6 +15,7 @@ import java.security.Principal;
  */
 @RestController
 @RequestMapping("/api/contacts")
+@org.springframework.validation.annotation.Validated
 public class ContactController {
 
     private final ContactService contactService;
@@ -100,5 +101,27 @@ public class ContactController {
         }
         contactService.deleteContact(id, principal.getName());
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Searches and lists contacts owned by the authenticated user with filtering and pagination.
+     *
+     * @param principal the authenticated principal context
+     * @param search    optional search keyword matching first name, last name, email, or phone
+     * @param page      zero-indexed page number
+     * @param size      number of items per page
+     * @return a paginated list of matching contacts
+     */
+    @GetMapping
+    public ResponseEntity<org.springframework.data.domain.Page<ContactResponse>> searchContacts(
+            Principal principal,
+            @RequestParam(required = false, defaultValue = "") String search,
+            @RequestParam(required = false, defaultValue = "0") @jakarta.validation.constraints.Min(0) int page,
+            @RequestParam(required = false, defaultValue = "10") @jakarta.validation.constraints.Min(1) @jakarta.validation.constraints.Max(100) int size) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        org.springframework.data.domain.Page<ContactResponse> response = contactService.searchContacts(search, page, size, principal.getName());
+        return ResponseEntity.ok(response);
     }
 }

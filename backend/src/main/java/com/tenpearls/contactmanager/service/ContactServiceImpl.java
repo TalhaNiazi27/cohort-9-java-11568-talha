@@ -159,6 +159,10 @@ public class ContactServiceImpl implements ContactService {
         User owner = fetchOwner(currentUserUsername);
         log.info("Searching contacts for user ID: {}, page: {}, size: {}", owner.getId(), page, size);
 
+        if (page < 0 || size < 1 || size > 100) {
+            throw new com.tenpearls.contactmanager.exception.BadRequestException("Invalid page or size parameter");
+        }
+
         Pageable pageable = PageRequest.of(page, size, Sort.by("firstName").ascending());
 
         Specification<Contact> spec = (root, query, cb) -> {

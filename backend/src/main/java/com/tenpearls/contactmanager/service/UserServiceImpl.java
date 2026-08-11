@@ -88,7 +88,8 @@ public class UserServiceImpl implements UserService {
         try {
             savedUser = userRepository.saveAndFlush(user);
         } catch (DataIntegrityViolationException ex) {
-            throw new ResourceAlreadyExistsException("Email or phone number is already registered");
+            log.warn("User insert violated a database constraint", ex);
+            throw new ResourceAlreadyExistsException("Email or phone number is already registered", ex);
         }
 
         log.info("User registered successfully with ID: {}", savedUser.getId());
