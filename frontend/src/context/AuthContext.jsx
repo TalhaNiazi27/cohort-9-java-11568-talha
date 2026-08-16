@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '../api/axiosConfig';
+import { safeStorage } from '../utils/storage';
 
 const AuthContext = createContext();
 
@@ -9,26 +10,38 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token') || null);
+  const [token, setToken] = useState(safeStorage.getItem('token') || null);
   const [loading, setLoading] = useState(true);
 
   // Set up initial state from localStorage and fetch current user profile if token exists
   useEffect(() => {
+    let isActive = true;
+
     const initAuth = async () => {
       if (token) {
         try {
           // If we have a token, optionally fetch the current user profile from the backend
           const response = await api.get('/auth/me');
-          setUser(response.data);
+          if (isActive) {
+            setUser(response.data);
+          }
         } catch (error) {
           console.error('Failed to authenticate stored token:', error);
-          logout();
+          if (isActive) {
+            logout();
+          }
         }
       }
-      setLoading(false);
+      if (isActive) {
+        setLoading(false);
+      }
     };
 
     initAuth();
+
+    return () => {
+      isActive = false;
+    };
   }, [token]);
 
   const login = async (username, password) => {
@@ -36,7 +49,7 @@ export const AuthProvider = ({ children }) => {
       const response = await api.post('/auth/login', { username, password });
       const { token: jwt, id, email, phone } = response.data;
       
-      localStorage.setItem('token', jwt);
+      safeStorage.setItem('token', jwt);
       setToken(jwt);
       setUser({ id, email, phone });
       
@@ -66,8 +79,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    safeStorage.removeItem('token');
+    safeStorage.removeItem('user');
     setToken(null);
     setUser(null);
     // Note: React Router handles redirecting if we wrap routes properly

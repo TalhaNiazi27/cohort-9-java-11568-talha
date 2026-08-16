@@ -40,10 +40,7 @@ const Profile = () => {
         </div>
 
         <div style={{ display: 'flex', gap: '1rem' }}>
-          <button className="btn" style={{ flex: 1, backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
-            Change Password
-          </button>
-          <button className="btn btn-danger" onClick={handleLogout} style={{ flex: 1 }}>
+          <button className="btn btn-danger" onClick={handleLogout} style={{ width: '100%' }}>
             Sign Out
           </button>
         </div>

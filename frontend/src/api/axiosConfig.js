@@ -1,8 +1,12 @@
 import axios from 'axios';
+import { safeStorage } from '../utils/storage';
+
+const defaultBaseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+const isProd = import.meta.env.PROD;
 
 // Create an Axios instance with base URL
 const api = axios.create({
-  baseURL: 'http://localhost:8080/api', // Spring Boot backend URL
+  baseURL: isProd ? defaultBaseURL.replace(/^http:\/\//i, 'https://') : defaultBaseURL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -11,7 +15,7 @@ const api = axios.create({
 // Request Interceptor: Attach the JWT token to every request if it exists
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = safeStorage.getItem('token');
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
@@ -32,8 +36,8 @@ api.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       // Clear localStorage and redirect to login (if not already on login)
       if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        safeStorage.removeItem('token');
+        safeStorage.removeItem('user');
         window.location.href = '/login';
       }
     }
