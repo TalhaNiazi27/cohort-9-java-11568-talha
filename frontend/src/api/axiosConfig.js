@@ -13,6 +13,7 @@ const api = axios.create({
   withCredentials: true, // Send cookies with every request
   xsrfCookieName: 'XSRF-TOKEN', // The cookie name Spring Security uses
   xsrfHeaderName: 'X-XSRF-TOKEN', // The header name Spring Security expects
+  timeout: 15000, // 15 seconds finite timeout
 });
 
 // Request Interceptor: No longer needed for Bearer tokens as we use HttpOnly cookies.

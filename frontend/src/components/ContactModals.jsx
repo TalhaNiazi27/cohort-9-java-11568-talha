@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/axiosConfig';
+import ModalWrapper from './ModalWrapper';
 
 export const ContactModal = ({ isOpen, onClose, onSaved, contactToEdit }) => {
   const [formData, setFormData] = useState({
@@ -92,13 +93,9 @@ export const ContactModal = ({ isOpen, onClose, onSaved, contactToEdit }) => {
   };
 
   return (
-    <div style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
-      alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem'
-    }}>
+    <ModalWrapper onClose={onClose}>
       <div className="glass-card animate-fade-in" style={{ width: '100%', maxWidth: '500px', backgroundColor: 'var(--bg-secondary)' }}>
-        <h2 style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
+        <h2 id="modal-title" style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
           {contactToEdit ? 'Edit Contact' : 'Add New Contact'}
         </h2>
         
@@ -145,7 +142,7 @@ export const ContactModal = ({ isOpen, onClose, onSaved, contactToEdit }) => {
           </div>
         </form>
       </div>
-    </div>
+    </ModalWrapper>
   );
 };
 
@@ -153,13 +150,9 @@ export const DeleteConfirmModal = ({ isOpen, onClose, onConfirm, contactName }) 
   if (!isOpen) return null;
 
   return (
-    <div style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
-      alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem'
-    }}>
+    <ModalWrapper onClose={onClose}>
       <div className="glass-card animate-fade-in" style={{ width: '100%', maxWidth: '400px', backgroundColor: 'var(--bg-secondary)', textAlign: 'center' }}>
-        <h2 style={{ marginBottom: '1rem', color: 'var(--danger)' }}>Delete Contact</h2>
+        <h2 id="modal-title" style={{ marginBottom: '1rem', color: 'var(--danger)' }}>Delete Contact</h2>
         <p style={{ marginBottom: '2rem', color: 'var(--text-secondary)' }}>
           Are you sure you want to delete <strong>{contactName}</strong>? This action cannot be undone.
         </p>
@@ -172,7 +165,7 @@ export const DeleteConfirmModal = ({ isOpen, onClose, onConfirm, contactName }) 
           </button>
         </div>
       </div>
-    </div>
+    </ModalWrapper>
   );
 };
 
@@ -216,13 +209,9 @@ export const ChangePasswordModal = ({ isOpen, onClose }) => {
   };
 
   return (
-    <div style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
-      alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem'
-    }}>
+    <ModalWrapper onClose={onClose}>
       <div className="glass-card animate-fade-in" style={{ width: '100%', maxWidth: '400px', backgroundColor: 'var(--bg-secondary)' }}>
-        <h2 style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
+        <h2 id="modal-title" style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
           Change Password
         </h2>
         
@@ -253,6 +242,6 @@ export const ChangePasswordModal = ({ isOpen, onClose }) => {
           </div>
         </form>
       </div>
-    </div>
+    </ModalWrapper>
   );
 };

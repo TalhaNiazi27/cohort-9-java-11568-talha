@@ -14,7 +14,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
+import java.io.IOException;
+import com.opencsv.exceptions.CsvException;
 import java.util.List;
 
 /**
@@ -71,9 +72,12 @@ public class ImportExportController {
             
             log.info("Successfully imported {} contacts for user: {}", imported.size(), authentication.getName());
             return ResponseEntity.ok().body("Successfully imported " + imported.size() + " contacts.");
-        } catch (Exception e) {
-            log.error("Failed to import contacts: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to import contacts: " + e.getMessage());
+        } catch (IOException | CsvException e) {
+            log.warn("Rejected malformed import file", e);
+            return ResponseEntity.badRequest().body("The file could not be parsed. Check the file format.");
+        } catch (RuntimeException e) {
+            log.error("Failed to import contacts", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to import contacts.");
         }
     }
 

@@ -11,6 +11,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [serviceError, setServiceError] = useState(false);
 
   // Check if user is authenticated by hitting the /me endpoint
   useEffect(() => {
@@ -23,9 +24,14 @@ export const AuthProvider = ({ children }) => {
           setUser(response.data);
         }
       } catch (error) {
-        // Expected if not logged in
         if (isActive) {
-          setUser(null);
+          if (error.code === 'ECONNABORTED' || !error.response) {
+            // Timeout or Network Error
+            setServiceError(true);
+          } else {
+            // Expected if not logged in (401 Unauthorized)
+            setUser(null);
+          }
         }
       }
       if (isActive) {
@@ -78,12 +84,13 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       await api.post('/auth/logout');
+      safeStorage.removeItem('user');
+      setUser(null);
+      return { success: true };
     } catch (err) {
       console.error('Logout request failed', err);
+      return { success: false, message: 'Logout failed.' };
     }
-    
-    safeStorage.removeItem('user');
-    setUser(null);
   };
 
   const value = {
@@ -94,6 +101,21 @@ export const AuthProvider = ({ children }) => {
     logout,
     loading
   };
+
+  if (serviceError) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', textAlign: 'center', fontFamily: 'sans-serif' }}>
+        <h2 style={{ color: '#ff4d4f', marginBottom: '1rem' }}>Service Unavailable</h2>
+        <p style={{ color: '#666', marginBottom: '1.5rem' }}>The server is taking too long to respond or is currently unreachable.</p>
+        <button 
+          onClick={() => window.location.reload()} 
+          style={{ padding: '10px 20px', backgroundColor: '#1890ff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
 
   return (
     <AuthContext.Provider value={value}>

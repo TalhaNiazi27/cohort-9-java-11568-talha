@@ -21,6 +21,9 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import com.opencsv.exceptions.CsvException;
 
 /**
  * Service implementation for importing and exporting contacts
@@ -31,6 +34,21 @@ import java.util.List;
 public class ImportExportServiceImpl implements ImportExportService {
 
     private final ContactRepository contactRepository;
+
+    private static final String FORMULA_PREFIXES = "=+-@\t\r";
+
+    /**
+     * Neutralizes spreadsheet formula injection in an exported CSV value.
+     *
+     * @param value the raw field value
+     * @return a value that a spreadsheet application treats as text
+     */
+    private String sanitizeCsvValue(String value) {
+        if (value == null || value.isEmpty()) {
+            return "";
+        }
+        return FORMULA_PREFIXES.indexOf(value.charAt(0)) >= 0 ? "'" + value : value;
+    }
 
     /**
      * Constructs ImportExportServiceImpl with the required ContactRepository.
@@ -45,9 +63,9 @@ public class ImportExportServiceImpl implements ImportExportService {
      * {@inheritDoc}
      */
     @Override
-    public List<Contact> importCsv(MultipartFile file, User user) throws Exception {
+    public List<Contact> importCsv(MultipartFile file, User user) throws IOException, CsvException {
         List<Contact> importedContacts = new ArrayList<>();
-        try (Reader reader = new InputStreamReader(file.getInputStream());
+        try (Reader reader = new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8);
              CSVReader csvReader = new CSVReader(reader)) {
              
             List<String[]> records = csvReader.readAll();
@@ -101,9 +119,9 @@ public class ImportExportServiceImpl implements ImportExportService {
      * {@inheritDoc}
      */
     @Override
-    public byte[] exportCsv(List<Contact> contacts) throws Exception {
+    public byte[] exportCsv(List<Contact> contacts) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (OutputStreamWriter writer = new OutputStreamWriter(baos);
+        try (OutputStreamWriter writer = new OutputStreamWriter(baos, StandardCharsets.UTF_8);
              CSVWriter csvWriter = new CSVWriter(writer)) {
              
             String[] header = {"FirstName", "LastName", "Title", "Email", "Phone"};
@@ -113,11 +131,11 @@ public class ImportExportServiceImpl implements ImportExportService {
                 String email = contact.getEmails().isEmpty() ? "" : contact.getEmails().get(0).getEmailAddress();
                 String phone = contact.getPhones().isEmpty() ? "" : contact.getPhones().get(0).getPhoneNumber();
                 String[] record = {
-                        contact.getFirstName(),
-                        contact.getLastName(),
-                        contact.getTitle() != null ? contact.getTitle() : "",
-                        email,
-                        phone
+                        sanitizeCsvValue(contact.getFirstName()),
+                        sanitizeCsvValue(contact.getLastName()),
+                        sanitizeCsvValue(contact.getTitle() != null ? contact.getTitle() : ""),
+                        sanitizeCsvValue(email),
+                        sanitizeCsvValue(phone)
                 };
                 csvWriter.writeNext(record);
             }
@@ -131,7 +149,7 @@ public class ImportExportServiceImpl implements ImportExportService {
      * {@inheritDoc}
      */
     @Override
-    public List<Contact> importVcf(MultipartFile file, User user) throws Exception {
+    public List<Contact> importVcf(MultipartFile file, User user) throws IOException {
         List<Contact> importedContacts = new ArrayList<>();
         List<VCard> vcards = Ezvcard.parse(file.getInputStream()).all();
 
@@ -200,7 +218,7 @@ public class ImportExportServiceImpl implements ImportExportService {
      * {@inheritDoc}
      */
     @Override
-    public byte[] exportVcf(List<Contact> contacts) throws Exception {
+    public byte[] exportVcf(List<Contact> contacts) throws IOException {
         List<VCard> vcards = new ArrayList<>();
         for (Contact contact : contacts) {
             VCard vcard = new VCard();
@@ -227,6 +245,6 @@ public class ImportExportServiceImpl implements ImportExportService {
         }
         
         log.info("Exported {} contacts to vCard", contacts.size());
-        return Ezvcard.write(vcards).version(VCardVersion.V4_0).go().getBytes();
+        return Ezvcard.write(vcards).version(VCardVersion.V4_0).go().getBytes(StandardCharsets.UTF_8);
     }
 }

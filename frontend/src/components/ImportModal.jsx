@@ -1,11 +1,24 @@
 import React, { useState, useRef } from 'react';
 import api from '../api/axiosConfig';
+import ModalWrapper from './ModalWrapper';
 
 const ImportModal = ({ onClose, onSuccess }) => {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const fileInputRef = useRef(null);
+
+  const ACCEPTED_EXTENSIONS = ['.csv', '.vcf'];
+
+  const selectFile = (candidate) => {
+    const name = candidate.name.toLowerCase();
+    if (!ACCEPTED_EXTENSIONS.some(ext => name.endsWith(ext))) {
+      setError('Select a .csv or .vcf file.');
+      return;
+    }
+    setError(null);
+    setFile(candidate);
+  };
 
   const handleDragOver = (e) => {
     e.preventDefault();
@@ -14,13 +27,13 @@ const ImportModal = ({ onClose, onSuccess }) => {
   const handleDrop = (e) => {
     e.preventDefault();
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      setFile(e.dataTransfer.files[0]);
+      selectFile(e.dataTransfer.files[0]);
     }
   };
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
-      setFile(e.target.files[0]);
+      selectFile(e.target.files[0]);
     }
   };
 
@@ -44,27 +57,34 @@ const ImportModal = ({ onClose, onSuccess }) => {
       onSuccess();
     } catch (err) {
       console.error(err);
-      setError(err.response?.data || 'Failed to import contacts. Please check the file format.');
+      const data = err.response?.data;
+      const message = typeof data === 'string' ? data : data?.message;
+      setError(message || 'Failed to import contacts. Please check the file format.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
-      alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem'
-    }}>
+    <ModalWrapper onClose={onClose}>
       <div className="glass-card animate-fade-in" style={{ width: '100%', maxWidth: '500px', backgroundColor: 'var(--bg-secondary)', padding: '2rem' }}>
-        <h2 style={{ marginBottom: '1.5rem', color: 'var(--text-primary)' }}>Import Contacts</h2>
+        <h2 id="modal-title" style={{ marginBottom: '1.5rem', color: 'var(--text-primary)' }}>Import Contacts</h2>
         
         {error && <div style={{ color: 'white', backgroundColor: 'var(--danger)', padding: '0.75rem', borderRadius: '8px', marginBottom: '1rem' }}>{error}</div>}
         
         <div 
+          role="button"
+          tabIndex={0}
+          aria-label="Select a CSV or vCard file to import"
           onDragOver={handleDragOver}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current.click()}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              fileInputRef.current.click();
+            }
+          }}
           style={{
             border: '2px dashed var(--border-color)',
             borderRadius: '12px',
@@ -97,7 +117,7 @@ const ImportModal = ({ onClose, onSuccess }) => {
           </button>
         </div>
       </div>
-    </div>
+    </ModalWrapper>
   );
 };
 
