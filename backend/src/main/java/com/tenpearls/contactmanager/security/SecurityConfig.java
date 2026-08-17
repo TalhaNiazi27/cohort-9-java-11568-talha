@@ -1,6 +1,6 @@
 package com.tenpearls.contactmanager.security;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.tenpearls.contactmanager.exception.ErrorResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -16,6 +16,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -30,7 +31,7 @@ public class SecurityConfig {
 
     private final JwtTokenProvider tokenProvider;
     private final CustomUserDetailsService customUserDetailsService;
-    private final ObjectMapper objectMapper;
+    private final JsonMapper jsonMapper;
 
     @Value("${spring.h2.console.enabled:false}")
     private boolean h2ConsoleEnabled;
@@ -40,15 +41,15 @@ public class SecurityConfig {
      *
      * @param tokenProvider              the JWT token provider
      * @param customUserDetailsService   the custom user details service
-     * @param objectMapper               the Spring-configured ObjectMapper bean
+     * @param jsonMapper                 the Spring-configured JsonMapper bean
      */
     public SecurityConfig(
             JwtTokenProvider tokenProvider,
             CustomUserDetailsService customUserDetailsService,
-            ObjectMapper objectMapper) {
+            JsonMapper jsonMapper) {
         this.tokenProvider = tokenProvider;
         this.customUserDetailsService = customUserDetailsService;
-        this.objectMapper = objectMapper;
+        this.jsonMapper = jsonMapper;
     }
 
     @Bean
@@ -74,7 +75,10 @@ public class SecurityConfig {
 
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(csrf -> csrf.disable()) // Stateless authorization
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .ignoringRequestMatchers("/api/auth/register", "/api/auth/login") // Exclude auth endpoints from CSRF
+                )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         if (h2ConsoleEnabled) {
@@ -101,7 +105,7 @@ public class SecurityConfig {
                                     .build();
                             String json;
                             try {
-                                json = objectMapper.writeValueAsString(errorResponse);
+                                json = jsonMapper.writeValueAsString(errorResponse);
                             } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
                                 json = "{\"status\":401,\"error\":\"Unauthorized\",\"message\":\"Full authentication is required\"}";
                             }
@@ -119,7 +123,7 @@ public class SecurityConfig {
                                     .build();
                             String json;
                             try {
-                                json = objectMapper.writeValueAsString(errorResponse);
+                                json = jsonMapper.writeValueAsString(errorResponse);
                             } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
                                 json = "{\"status\":403,\"error\":\"Forbidden\",\"message\":\"Access denied\"}";
                             }
@@ -138,8 +142,8 @@ public class SecurityConfig {
         // Allow common React local dev environments (Vite = 5173, Create-React-App = 3000)
         configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://localhost:3000"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Cache-Control", "Accept"));
-        configuration.setExposedHeaders(Collections.singletonList("Authorization"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Cache-Control", "Accept", "X-XSRF-TOKEN"));
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "X-XSRF-TOKEN"));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

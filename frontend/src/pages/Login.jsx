@@ -21,12 +21,18 @@ const Login = () => {
     }
 
     setIsLoading(true);
-    const result = await login(username, password);
-    
-    if (result.success) {
-      navigate('/dashboard');
-    } else {
-      setError(result.message);
+    try {
+      const result = await login(username, password);
+      
+      if (result.success) {
+        navigate('/dashboard');
+      } else {
+        setError(result.message);
+      }
+    } catch (err) {
+      console.error('Unexpected error during login:', err);
+      setError('An unexpected error occurred. Please try again later.');
+    } finally {
       setIsLoading(false);
     }
   };

@@ -46,12 +46,34 @@ export const ContactModal = ({ isOpen, onClose, onSaved, contactToEdit }) => {
     setError(null);
 
     try {
+      let emails = contactToEdit ? [...(contactToEdit.emails || [])] : [];
+      if (formData.email) {
+        if (emails.length > 0) {
+          emails[0] = { ...emails[0], emailAddress: formData.email, label: formData.label };
+        } else {
+          emails.push({ emailAddress: formData.email, label: formData.label });
+        }
+      } else if (emails.length > 0) {
+        emails.shift();
+      }
+
+      let phones = contactToEdit ? [...(contactToEdit.phones || [])] : [];
+      if (formData.phone) {
+        if (phones.length > 0) {
+          phones[0] = { ...phones[0], phoneNumber: formData.phone, label: formData.label };
+        } else {
+          phones.push({ phoneNumber: formData.phone, label: formData.label });
+        }
+      } else if (phones.length > 0) {
+        phones.shift();
+      }
+
       const payload = {
         firstName: formData.firstName,
         lastName: formData.lastName,
-        title: '',
-        emails: formData.email ? [{ emailAddress: formData.email, label: formData.label }] : [],
-        phones: formData.phone ? [{ phoneNumber: formData.phone, label: formData.label }] : []
+        title: contactToEdit ? (contactToEdit.title || '') : '',
+        emails,
+        phones
       };
 
       if (contactToEdit) {

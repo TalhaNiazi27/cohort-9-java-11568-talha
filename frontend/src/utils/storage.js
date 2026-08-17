@@ -11,37 +11,37 @@ const isStorageAvailable = () => {
   }
 };
 
-const hasStorage = isStorageAvailable();
+let useMemoryStorage = !isStorageAvailable();
 
 export const safeStorage = {
   getItem: (key) => {
-    if (hasStorage) {
+    if (!useMemoryStorage) {
       try {
         return window.localStorage.getItem(key);
       } catch (e) {
-        return memoryStorage.get(key) || null;
+        useMemoryStorage = true;
       }
     }
     return memoryStorage.get(key) || null;
   },
   setItem: (key, value) => {
-    if (hasStorage) {
+    if (!useMemoryStorage) {
       try {
         window.localStorage.setItem(key, value);
         return;
       } catch (e) {
-        // Continue to fallback
+        useMemoryStorage = true;
       }
     }
     memoryStorage.set(key, value);
   },
   removeItem: (key) => {
-    if (hasStorage) {
+    if (!useMemoryStorage) {
       try {
         window.localStorage.removeItem(key);
         return;
       } catch (e) {
-        // Continue to fallback
+        useMemoryStorage = true;
       }
     }
     memoryStorage.delete(key);

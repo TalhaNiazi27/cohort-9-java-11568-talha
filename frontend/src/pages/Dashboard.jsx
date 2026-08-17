@@ -10,6 +10,7 @@ const Dashboard = () => {
   
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -26,15 +27,18 @@ const Dashboard = () => {
     navigate('/login');
   };
 
-  const fetchContacts = async (query = '', page = 0) => {
+  const fetchContacts = async (query = '', page = 0, isActive = { current: true }) => {
     try {
       setLoading(true);
+      setError(null);
       let url = `/contacts?page=${page}&size=10`;
       if (query.trim() !== '') {
         url = `/contacts/search?q=${encodeURIComponent(query)}&page=${page}&size=10`;
       }
       const response = await api.get(url);
       
+      if (!isActive.current) return;
+
       const data = response.data.content || response.data;
       setContacts(data);
       
@@ -45,30 +49,30 @@ const Dashboard = () => {
         setTotalElements(data.length);
         setTotalPages(1);
       }
-    } catch (error) {
-      console.error('Error fetching contacts:', error);
+    } catch (err) {
+      if (!isActive.current) return;
+      console.error('Error fetching contacts:', err);
+      setError('Failed to load contacts. Please check your connection.');
     } finally {
-      setLoading(false);
+      if (isActive.current) {
+        setLoading(false);
+      }
     }
   };
 
+  // Coordinated effect for search and pagination
   useEffect(() => {
+    let isActive = { current: true };
+    
     const delayDebounceFn = setTimeout(() => {
-      setCurrentPage(0); // Reset to first page on search
-      fetchContacts(searchQuery, 0);
+      fetchContacts(searchQuery, currentPage, isActive);
     }, 300);
 
-    return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery]);
-
-  useEffect(() => {
-    // Only fetch if not triggered by search change
-    if (searchQuery === '') {
-        fetchContacts('', currentPage);
-    } else {
-        fetchContacts(searchQuery, currentPage);
-    }
-  }, [currentPage]);
+    return () => {
+      clearTimeout(delayDebounceFn);
+      isActive.current = false;
+    };
+  }, [searchQuery, currentPage]);
 
   const handleAddClick = () => {
     setContactToEdit(null);
@@ -89,7 +93,7 @@ const Dashboard = () => {
     if (!contactToDelete) return;
     try {
       await api.delete(`/contacts/${contactToDelete.id}`);
-      fetchContacts(); // Refresh list after delete
+      fetchContacts(searchQuery, currentPage); // Refresh list and preserve active view
     } catch (err) {
       console.error('Error deleting contact:', err);
     } finally {
@@ -158,7 +162,10 @@ const Dashboard = () => {
                 className="input-field"
                 style={{ width: '250px', marginBottom: 0 }}
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(0); // Reset page on new search
+                }}
               />
               <button className="btn btn-primary" onClick={handleAddClick}>
                 + Add Contact
@@ -183,6 +190,15 @@ const Dashboard = () => {
                   <tr>
                     <td colSpan="5" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
                       Loading contacts...
+                    </td>
+                  </tr>
+                ) : error ? (
+                  <tr>
+                    <td colSpan="5" style={{ padding: '2rem', textAlign: 'center', color: 'var(--danger)' }}>
+                      <p style={{ marginBottom: '1rem' }}>{error}</p>
+                      <button className="btn btn-primary" onClick={() => fetchContacts(searchQuery, currentPage)}>
+                        Retry
+                      </button>
                     </td>
                   </tr>
                 ) : contacts.length === 0 ? (
@@ -245,7 +261,7 @@ const Dashboard = () => {
       <ContactModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
-        onSaved={fetchContacts}
+        onSaved={() => fetchContacts(searchQuery, currentPage)}
         contactToEdit={contactToEdit}
       />
       

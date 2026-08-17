@@ -27,12 +27,18 @@ const Register = () => {
     }
 
     setIsLoading(true);
-    const result = await register({ email, phone, password });
-    
-    if (result.success) {
-      navigate('/login'); // Redirect to login on success
-    } else {
-      setError(result.message);
+    try {
+      const result = await register({ email, phone, password });
+      
+      if (result.success) {
+        navigate('/login'); // Redirect to login on success
+      } else {
+        setError(result.message);
+      }
+    } catch (err) {
+      console.error('Unexpected error during registration:', err);
+      setError('An unexpected error occurred. Please try again later.');
+    } finally {
       setIsLoading(false);
     }
   };

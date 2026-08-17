@@ -10,26 +10,22 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(safeStorage.getItem('token') || null);
   const [loading, setLoading] = useState(true);
 
-  // Set up initial state from localStorage and fetch current user profile if token exists
+  // Check if user is authenticated by hitting the /me endpoint
   useEffect(() => {
     let isActive = true;
 
     const initAuth = async () => {
-      if (token) {
-        try {
-          // If we have a token, optionally fetch the current user profile from the backend
-          const response = await api.get('/auth/me');
-          if (isActive) {
-            setUser(response.data);
-          }
-        } catch (error) {
-          console.error('Failed to authenticate stored token:', error);
-          if (isActive) {
-            logout();
-          }
+      try {
+        const response = await api.get('/auth/me');
+        if (isActive) {
+          setUser(response.data);
+        }
+      } catch (error) {
+        // Expected if not logged in
+        if (isActive) {
+          setUser(null);
         }
       }
       if (isActive) {
@@ -42,15 +38,14 @@ export const AuthProvider = ({ children }) => {
     return () => {
       isActive = false;
     };
-  }, [token]);
+  }, []);
 
   const login = async (username, password) => {
     try {
       const response = await api.post('/auth/login', { username, password });
-      const { token: jwt, id, email, phone } = response.data;
       
-      safeStorage.setItem('token', jwt);
-      setToken(jwt);
+      // Cookie is automatically set by the backend
+      const { id, email, phone } = response.data.user || response.data;
       setUser({ id, email, phone });
       
       return { success: true };
@@ -66,8 +61,10 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       const response = await api.post('/auth/register', userData);
-      // Registration typically doesn't log you in directly, but in some apps it does.
-      // Assuming we need to manually log in after, or just return success.
+      // Registration sets the cookie automatically now
+      const { id, email, phone } = response.data;
+      setUser({ id, email, phone });
+      
       return { success: true, data: response.data };
     } catch (error) {
       console.error('Registration error:', error);
@@ -78,17 +75,20 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    safeStorage.removeItem('token');
+  const logout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch (err) {
+      console.error('Logout request failed', err);
+    }
+    
     safeStorage.removeItem('user');
-    setToken(null);
     setUser(null);
-    // Note: React Router handles redirecting if we wrap routes properly
   };
 
   const value = {
     user,
-    token,
+    // We don't expose token anymore since it's an HttpOnly cookie
     login,
     register,
     logout,
@@ -101,3 +101,4 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
+

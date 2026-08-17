@@ -7,6 +7,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
+import jakarta.servlet.http.HttpServletResponse;
 import java.security.Principal;
 
 /**
@@ -35,9 +38,26 @@ public class AuthController {
      * @return the registered user details
      */
     @PostMapping("/register")
-    public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest registerRequest) {
-        UserResponse response = userService.register(registerRequest);
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest registerRequest, HttpServletResponse response) {
+        UserResponse userResponse = userService.register(registerRequest);
+        
+        // Auto-login after registration by generating token
+        LoginRequest loginRequest = new LoginRequest(
+                registerRequest.getEmail() != null ? registerRequest.getEmail() : registerRequest.getPhone(),
+                registerRequest.getPassword()
+        );
+        AuthResponse authResponse = userService.login(loginRequest);
+        
+        ResponseCookie cookie = ResponseCookie.from("jwt", authResponse.getAccessToken())
+                .httpOnly(true)
+                .secure(false) // Set to true in production with HTTPS
+                .path("/")
+                .maxAge(7 * 24 * 60 * 60) // 7 days
+                .sameSite("Lax")
+                .build();
+                
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        return new ResponseEntity<>(userResponse, HttpStatus.CREATED);
     }
 
     /**
@@ -47,9 +67,40 @@ public class AuthController {
      * @return the authentication response containing JWT token
      */
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
-        AuthResponse response = userService.login(loginRequest);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest loginRequest, HttpServletResponse response) {
+        AuthResponse authResponse = userService.login(loginRequest);
+        
+        ResponseCookie cookie = ResponseCookie.from("jwt", authResponse.getAccessToken())
+                .httpOnly(true)
+                .secure(false) // Set to true in production with HTTPS
+                .path("/")
+                .maxAge(7 * 24 * 60 * 60) // 7 days
+                .sameSite("Lax")
+                .build();
+                
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        // We still return the AuthResponse (or just User info) so frontend can use it if needed, but it shouldn't store the token
+        return ResponseEntity.ok(authResponse);
+    }
+
+    /**
+     * Logs out the user by clearing the JWT cookie.
+     *
+     * @param response the HTTP response to clear the cookie
+     * @return success message
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(HttpServletResponse response) {
+        ResponseCookie cookie = ResponseCookie.from("jwt", "")
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(0) // Expire immediately
+                .sameSite("Lax")
+                .build();
+                
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        return ResponseEntity.ok("Logged out successfully");
     }
 
     /**
