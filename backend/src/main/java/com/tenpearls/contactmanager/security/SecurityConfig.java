@@ -1,6 +1,5 @@
 package com.tenpearls.contactmanager.security;
 
-import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.tenpearls.contactmanager.exception.ErrorResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -31,7 +30,6 @@ public class SecurityConfig {
 
     private final JwtTokenProvider tokenProvider;
     private final CustomUserDetailsService customUserDetailsService;
-    private final JsonMapper jsonMapper;
 
     @Value("${spring.h2.console.enabled:false}")
     private boolean h2ConsoleEnabled;
@@ -45,11 +43,9 @@ public class SecurityConfig {
      */
     public SecurityConfig(
             JwtTokenProvider tokenProvider,
-            CustomUserDetailsService customUserDetailsService,
-            JsonMapper jsonMapper) {
+            CustomUserDetailsService customUserDetailsService) {
         this.tokenProvider = tokenProvider;
         this.customUserDetailsService = customUserDetailsService;
-        this.jsonMapper = jsonMapper;
     }
 
     @Bean
@@ -96,37 +92,13 @@ public class SecurityConfig {
                         .authenticationEntryPoint((request, response, authException) -> {
                             response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED);
                             response.setContentType("application/json");
-                            ErrorResponse errorResponse = ErrorResponse.builder()
-                                    .timestamp(LocalDateTime.now())
-                                    .status(401)
-                                    .error("Unauthorized")
-                                    .message("Full authentication is required to access this resource")
-                                    .path(request.getRequestURI())
-                                    .build();
-                            String json;
-                            try {
-                                json = jsonMapper.writeValueAsString(errorResponse);
-                            } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
-                                json = "{\"status\":401,\"error\":\"Unauthorized\",\"message\":\"Full authentication is required\"}";
-                            }
+                            String json = String.format("{\"timestamp\":\"%s\",\"status\":401,\"error\":\"Unauthorized\",\"message\":\"Full authentication is required to access this resource\",\"path\":\"%s\"}", LocalDateTime.now().toString(), request.getRequestURI());
                             response.getWriter().write(json);
                         })
                         .accessDeniedHandler((request, response, accessDeniedException) -> {
                             response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN);
                             response.setContentType("application/json");
-                            ErrorResponse errorResponse = ErrorResponse.builder()
-                                    .timestamp(LocalDateTime.now())
-                                    .status(403)
-                                    .error("Forbidden")
-                                    .message("Access denied")
-                                    .path(request.getRequestURI())
-                                    .build();
-                            String json;
-                            try {
-                                json = jsonMapper.writeValueAsString(errorResponse);
-                            } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
-                                json = "{\"status\":403,\"error\":\"Forbidden\",\"message\":\"Access denied\"}";
-                            }
+                            String json = String.format("{\"timestamp\":\"%s\",\"status\":403,\"error\":\"Forbidden\",\"message\":\"Access denied\",\"path\":\"%s\"}", LocalDateTime.now().toString(), request.getRequestURI());
                             response.getWriter().write(json);
                         })
                 )

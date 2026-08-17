@@ -48,7 +48,7 @@ public class AuthController {
         );
         AuthResponse authResponse = userService.login(loginRequest);
         
-        ResponseCookie cookie = ResponseCookie.from("jwt", authResponse.getAccessToken())
+        ResponseCookie cookie = ResponseCookie.from("jwt", authResponse.getToken())
                 .httpOnly(true)
                 .secure(false) // Set to true in production with HTTPS
                 .path("/")
@@ -56,8 +56,9 @@ public class AuthController {
                 .sameSite("Lax")
                 .build();
                 
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-        return new ResponseEntity<>(userResponse, HttpStatus.CREATED);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body(userResponse);
     }
 
     /**
@@ -70,7 +71,7 @@ public class AuthController {
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest loginRequest, HttpServletResponse response) {
         AuthResponse authResponse = userService.login(loginRequest);
         
-        ResponseCookie cookie = ResponseCookie.from("jwt", authResponse.getAccessToken())
+        ResponseCookie cookie = ResponseCookie.from("jwt", authResponse.getToken())
                 .httpOnly(true)
                 .secure(false) // Set to true in production with HTTPS
                 .path("/")
@@ -78,9 +79,10 @@ public class AuthController {
                 .sameSite("Lax")
                 .build();
                 
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
         // We still return the AuthResponse (or just User info) so frontend can use it if needed, but it shouldn't store the token
-        return ResponseEntity.ok(authResponse);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body(authResponse);
     }
 
     /**
@@ -99,8 +101,9 @@ public class AuthController {
                 .sameSite("Lax")
                 .build();
                 
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-        return ResponseEntity.ok("Logged out successfully");
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body("Logged out successfully");
     }
 
     /**

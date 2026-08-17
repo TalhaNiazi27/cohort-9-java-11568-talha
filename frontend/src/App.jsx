@@ -9,13 +9,13 @@ import Dashboard from './pages/Dashboard';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
-  const { token, loading } = useAuth();
+  const { user, loading } = useAuth();
   
   if (loading) {
     return <div>Loading...</div>;
   }
   
-  if (!token) {
+  if (!user) {
     return <Navigate to="/login" />;
   }
   
