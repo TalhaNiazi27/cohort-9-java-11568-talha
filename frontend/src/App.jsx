@@ -5,6 +5,7 @@ import { safeStorage } from './utils/storage';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
+import Dashboard from './pages/Dashboard';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -59,8 +60,17 @@ function App() {
             } 
           />
           
-          {/* Default Route redirects to Profile or Login */}
-          <Route path="*" element={<Navigate to="/profile" />} />
+          <Route 
+            path="/dashboard" 
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Default Route redirects to Dashboard or Login */}
+          <Route path="*" element={<Navigate to="/dashboard" />} />
         </Routes>
       </Router>
     </AuthProvider>
