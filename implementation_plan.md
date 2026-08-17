@@ -1,57 +1,34 @@
 # Contact Manager Project Plan
 
-# Week 5: Advanced Features (Import/Export) & Quality Control - Implementation Plan
+# Week 6: Full Integration Polish & Documentation - Implementation Plan
 
 ## Goal Description
-Implement Import and Export features for Contacts using CSV and vCard (.vcf) formats. Implement SonarQube code quality rules to ensure professional code standards.
+Enhance the UI/UX with professional polish (transitions, animations, loading states) and produce comprehensive documentation and presentation materials so you are fully prepared to present this project to your mentors.
 
 ## Proposed Changes
 
-### Backend Changes
+### UI & Aesthetics Polish
+- Add loading skeletons to the Dashboard to replace the text "Loading contacts..."
+- Add subtle hover states and micro-interactions (e.g., scale-up effect on buttons, row highlighting in tables).
+- Ensure all color variables are strictly adhered to across light/dark contexts.
 
-#### [MODIFY] [pom.xml](file:///Users/apple/Documents/10%20Pearls%20InternShip/backend/pom.xml)
-- Add `opencsv` dependency for CSV parsing/writing.
-- Add `ez-vcard` dependency for vCard parsing/writing.
-
-#### [NEW] [ImportExportController.java](file:///Users/apple/Documents/10%20Pearls%20InternShip/backend/src/main/java/com/tenpearls/contactmanager/controller/ImportExportController.java)
-- Expose REST API endpoints:
-  - `POST /api/contacts/import` (accepts multipart/form-data with a file)
-  - `GET /api/contacts/export/csv`
-  - `GET /api/contacts/export/vcf`
-
-#### [NEW] [ImportExportService.java](file:///Users/apple/Documents/10%20Pearls%20InternShip/backend/src/main/java/com/tenpearls/contactmanager/service/ImportExportService.java)
-- Interface for import/export logic.
-
-#### [NEW] [ImportExportServiceImpl.java](file:///Users/apple/Documents/10%20Pearls%20InternShip/backend/src/main/java/com/tenpearls/contactmanager/service/ImportExportServiceImpl.java)
-- Implementation utilizing OpenCSV and ez-vcard to convert `Contact` entities to/from files.
-
-### Frontend Changes
-
-#### [MODIFY] [Dashboard.jsx](file:///Users/apple/Documents/10%20Pearls%20InternShip/frontend/src/pages/Dashboard.jsx)
-- Add "Export to CSV" and "Export to vCard" buttons in the action bar.
-- Add an "Import Contacts" button that opens an Import Modal.
-
-#### [NEW] [ImportModal.jsx](file:///Users/apple/Documents/10%20Pearls%20InternShip/frontend/src/components/ImportModal.jsx)
-- A drag-and-drop file upload modal.
-- Handles parsing selection and displaying success/error states.
+### Documentation & Presentation
+- **[NEW] walkthrough.md**: A detailed breakdown of the architecture, key features, and visual evidence (screenshots/recordings) of the app functioning.
+- **[NEW] presentation_guide.md**: An "Explain Like I'm 5" presentation script designed specifically for presenting your internship project. It will cover the "Why", "What", and "How" in an easy-to-digest format.
 
 ## Open Questions
 
 > [!IMPORTANT]
-> **Dependencies**: Are we okay using `opencsv` and `ez-vcard` for the backend parsing, or should everything be written from scratch?
+> **Aesthetics**: Are there any specific animations or styling effects (e.g., glassmorphism intensity, specific colors) you want prioritized for the final polish?
 
-> [!WARNING]
-> **Duplicate Handling**: When importing, how should we handle duplicate contacts? Should we ignore them, update them, or just insert them as duplicates? My proposal is to just insert them as new records for simplicity unless specified otherwise.
+> [!TIP]
+> **Presentation**: Do you know how much time you have for your final presentation? I can tailor the script length accordingly.
 
 ## Verification Plan
 
-### Automated Tests
-- Unit tests for `ImportExportServiceImpl` focusing on parsing logic.
-- Integration tests for `ImportExportController`.
-
 ### Manual Verification
-- Manually upload a sample `.csv` and `.vcf` file from the React UI.
-- Export contacts and verify they open cleanly in Microsoft Excel and Apple Contacts.
+- Visual inspection of all hover states, animations, and loading skeletons.
+- Review of the generated markdown files to ensure they are accurate, professional, and easy to read.
 
 ---
 

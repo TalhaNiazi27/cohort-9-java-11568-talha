@@ -71,7 +71,7 @@ const Dashboard = () => {
       setError(null);
       let url = `/contacts?page=${page}&size=10`;
       if (query.trim() !== '') {
-        url = `/contacts/search?q=${encodeURIComponent(query)}&page=${page}&size=10`;
+        url = `/contacts?search=${encodeURIComponent(query)}&page=${page}&size=10`;
       }
       const response = await api.get(url);
       
@@ -226,6 +226,7 @@ const Dashboard = () => {
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
                   <th style={{ padding: '1rem' }}>Name</th>
+                  <th style={{ padding: '1rem' }}>Title</th>
                   <th style={{ padding: '1rem' }}>Email</th>
                   <th style={{ padding: '1rem' }}>Phone</th>
                   <th style={{ padding: '1rem' }}>Label</th>
@@ -234,14 +235,22 @@ const Dashboard = () => {
               </thead>
               <tbody>
                 {loading ? (
-                  <tr>
-                    <td colSpan="5" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                      Loading contacts...
-                    </td>
-                  </tr>
+                  Array.from({ length: 5 }).map((_, index) => (
+                    <tr key={index} className="skeleton-row" style={{ borderBottom: '1px solid var(--glass-border)' }}>
+                      <td><div className="skeleton skeleton-text" style={{ width: '70%' }}></div></td>
+                      <td><div className="skeleton skeleton-text" style={{ width: '50%' }}></div></td>
+                      <td><div className="skeleton skeleton-text" style={{ width: '85%' }}></div></td>
+                      <td><div className="skeleton skeleton-text" style={{ width: '60%' }}></div></td>
+                      <td><div className="skeleton skeleton-text" style={{ width: '40%', borderRadius: '999px', height: '1.25rem' }}></div></td>
+                      <td style={{ textAlign: 'right' }}>
+                        <div className="skeleton skeleton-text" style={{ width: '40px', display: 'inline-block', marginRight: '0.5rem', height: '1.5rem' }}></div>
+                        <div className="skeleton skeleton-text" style={{ width: '50px', display: 'inline-block', height: '1.5rem' }}></div>
+                      </td>
+                    </tr>
+                  ))
                 ) : error ? (
                   <tr>
-                    <td colSpan="5" style={{ padding: '2rem', textAlign: 'center', color: 'var(--danger)' }}>
+                    <td colSpan="6" style={{ padding: '2rem', textAlign: 'center', color: 'var(--danger)' }}>
                       <p style={{ marginBottom: '1rem' }}>{error}</p>
                       <button className="btn btn-primary" onClick={() => fetchContacts(searchQuery, currentPage)}>
                         Retry
@@ -250,7 +259,7 @@ const Dashboard = () => {
                   </tr>
                 ) : contacts.length === 0 ? (
                   <tr>
-                    <td colSpan="5" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                    <td colSpan="6" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
                       No contacts found. Click "Add Contact" to get started!
                     </td>
                   </tr>
@@ -258,6 +267,7 @@ const Dashboard = () => {
                   contacts.map((contact) => (
                     <tr key={contact.id} style={{ borderBottom: '1px solid var(--glass-border)' }}>
                       <td style={{ padding: '1rem' }}>{contact.name || `${contact.firstName} ${contact.lastName}`}</td>
+                      <td style={{ padding: '1rem' }}>{contact.title || '-'}</td>
                       <td style={{ padding: '1rem' }}>{contact.emails && contact.emails.length > 0 ? contact.emails[0].emailAddress : ''}</td>
                       <td style={{ padding: '1rem' }}>{contact.phones && contact.phones.length > 0 ? contact.phones[0].phoneNumber : ''}</td>
                       <td style={{ padding: '1rem' }}>

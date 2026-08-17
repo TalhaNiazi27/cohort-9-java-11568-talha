@@ -67,7 +67,7 @@ const ImportModal = ({ onClose, onSuccess }) => {
 
   return (
     <ModalWrapper onClose={onClose}>
-      <div className="glass-card animate-fade-in" style={{ width: '100%', maxWidth: '500px', backgroundColor: 'var(--bg-secondary)', padding: '2rem' }}>
+      <div className="glass-card animate-fade-in" style={{ width: '100%', maxWidth: '500px', backgroundColor: 'var(--modal-bg)', padding: '2rem' }}>
         <h2 id="modal-title" style={{ marginBottom: '1.5rem', color: 'var(--text-primary)' }}>Import Contacts</h2>
         
         {error && <div style={{ color: 'white', backgroundColor: 'var(--danger)', padding: '0.75rem', borderRadius: '8px', marginBottom: '1rem' }}>{error}</div>}

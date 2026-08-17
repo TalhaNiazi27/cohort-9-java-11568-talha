@@ -34,7 +34,8 @@ const ModalWrapper = ({ onClose, children }) => {
         margin: 0,
         maxWidth: 'none',
         maxHeight: 'none',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        color: 'var(--text-primary)'
       }}
     >
       <div style={{

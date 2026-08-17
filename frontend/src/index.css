@@ -4,6 +4,7 @@
   /* Light Theme Variables */
   --bg-primary: #f8fafc;
   --bg-secondary: #ffffff;
+  --modal-bg: #ffffff;
   --text-primary: #0f172a;
   --text-secondary: #475569;
   
@@ -27,6 +28,7 @@
   /* Dark Theme Variables */
   --bg-primary: #0f172a;
   --bg-secondary: #1e293b;
+  --modal-bg: #334155;
   --text-primary: #f8fafc;
   --text-secondary: #cbd5e1;
   
@@ -77,7 +79,9 @@ body {
   font-size: 0.875rem;
   font-weight: 500;
   border-radius: 8px;
-  border: none;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.2s ease-in-out;
 }
@@ -176,4 +180,40 @@ body {
 
 .theme-toggle:hover {
   background-color: var(--bg-secondary);
+}
+
+/* Skeleton Loading Animation */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.skeleton {
+  animation: shimmer 2s infinite linear;
+  background: linear-gradient(to right, var(--bg-secondary) 4%, var(--border-color) 25%, var(--bg-secondary) 36%);
+  background-size: 1000px 100%;
+  border-radius: 4px;
+}
+
+.skeleton-text {
+  height: 1rem;
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.skeleton-row td {
+  padding: 1rem;
+}
+
+/* Table Hover Effects */
+tbody tr {
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+tbody tr:hover {
+  background-color: var(--accent-light);
 }

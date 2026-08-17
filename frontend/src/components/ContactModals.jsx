@@ -18,12 +18,13 @@ export const ContactModal = ({ isOpen, onClose, onSaved, contactToEdit }) => {
       setFormData({
         firstName: contactToEdit.firstName || '',
         lastName: contactToEdit.lastName || '',
+        title: contactToEdit.title || '',
         email: (contactToEdit.emails && contactToEdit.emails.length > 0) ? contactToEdit.emails[0].emailAddress : '',
         phone: (contactToEdit.phones && contactToEdit.phones.length > 0) ? contactToEdit.phones[0].phoneNumber : '',
         label: (contactToEdit.emails && contactToEdit.emails.length > 0) ? contactToEdit.emails[0].label : ((contactToEdit.phones && contactToEdit.phones.length > 0) ? contactToEdit.phones[0].label : 'Personal')
       });
     } else {
-      setFormData({ firstName: '', lastName: '', email: '', phone: '', label: 'Personal' });
+      setFormData({ firstName: '', lastName: '', title: '', email: '', phone: '', label: 'Personal' });
     }
     setError(null);
   }, [contactToEdit, isOpen]);
@@ -72,7 +73,7 @@ export const ContactModal = ({ isOpen, onClose, onSaved, contactToEdit }) => {
       const payload = {
         firstName: formData.firstName,
         lastName: formData.lastName,
-        title: contactToEdit ? (contactToEdit.title || '') : '',
+        title: formData.title,
         emails,
         phones
       };
@@ -94,7 +95,7 @@ export const ContactModal = ({ isOpen, onClose, onSaved, contactToEdit }) => {
 
   return (
     <ModalWrapper onClose={onClose}>
-      <div className="glass-card animate-fade-in" style={{ width: '100%', maxWidth: '500px', backgroundColor: 'var(--bg-secondary)' }}>
+      <div className="glass-card animate-fade-in" style={{ width: '100%', maxWidth: '500px', backgroundColor: 'var(--modal-bg)' }}>
         <h2 id="modal-title" style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
           {contactToEdit ? 'Edit Contact' : 'Add New Contact'}
         </h2>
@@ -111,6 +112,11 @@ export const ContactModal = ({ isOpen, onClose, onSaved, contactToEdit }) => {
               <label className="input-label">Last Name</label>
               <input type="text" name="lastName" className="input-field" value={formData.lastName} onChange={handleChange} />
             </div>
+          </div>
+          
+          <div className="input-group" style={{ marginBottom: 0 }}>
+            <label className="input-label">Job Title</label>
+            <input type="text" name="title" className="input-field" value={formData.title} onChange={handleChange} placeholder="e.g. Software Engineer" />
           </div>
           
           <div className="input-group" style={{ marginBottom: 0 }}>
@@ -151,7 +157,7 @@ export const DeleteConfirmModal = ({ isOpen, onClose, onConfirm, contactName }) 
 
   return (
     <ModalWrapper onClose={onClose}>
-      <div className="glass-card animate-fade-in" style={{ width: '100%', maxWidth: '400px', backgroundColor: 'var(--bg-secondary)', textAlign: 'center' }}>
+      <div className="glass-card animate-fade-in" style={{ width: '100%', maxWidth: '400px', backgroundColor: 'var(--modal-bg)', textAlign: 'center' }}>
         <h2 id="modal-title" style={{ marginBottom: '1rem', color: 'var(--danger)' }}>Delete Contact</h2>
         <p style={{ marginBottom: '2rem', color: 'var(--text-secondary)' }}>
           Are you sure you want to delete <strong>{contactName}</strong>? This action cannot be undone.
@@ -191,8 +197,8 @@ export const ChangePasswordModal = ({ isOpen, onClose }) => {
     setLoading(true);
     setError(null);
     try {
-      await api.put('/auth/password', { 
-        oldPassword: passwords.oldPassword, 
+      await api.post('/auth/change-password', { 
+        currentPassword: passwords.oldPassword, 
         newPassword: passwords.newPassword 
       });
       setSuccess(true);
@@ -210,7 +216,7 @@ export const ChangePasswordModal = ({ isOpen, onClose }) => {
 
   return (
     <ModalWrapper onClose={onClose}>
-      <div className="glass-card animate-fade-in" style={{ width: '100%', maxWidth: '400px', backgroundColor: 'var(--bg-secondary)' }}>
+      <div className="glass-card animate-fade-in" style={{ width: '100%', maxWidth: '400px', backgroundColor: 'var(--modal-bg)' }}>
         <h2 id="modal-title" style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
           Change Password
         </h2>
