@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -33,4 +34,12 @@ public interface ContactRepository extends JpaRepository<Contact, Long>, JpaSpec
      * @return an Optional containing the Contact if found and owned, empty otherwise
      */
     Optional<Contact> findByIdAndUser(Long id, User user);
+
+    /**
+     * Finds all contacts owned by a specific user (no pagination).
+     *
+     * @param user the user who owns the contacts
+     * @return a list of all contacts
+     */
+    List<Contact> findAllByUser(User user);
 }

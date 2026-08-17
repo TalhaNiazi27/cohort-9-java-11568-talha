@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axiosConfig';
 import { ContactModal, DeleteConfirmModal } from '../components/ContactModals';
+import ImportModal from '../components/ImportModal';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -19,8 +20,41 @@ const Dashboard = () => {
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [contactToEdit, setContactToEdit] = useState(null);
   const [contactToDelete, setContactToDelete] = useState(null);
+
+  const handleExportCsv = async () => {
+    try {
+      const response = await api.get('/contacts/export/csv', { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'contacts.csv');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Export CSV failed:', err);
+    }
+  };
+
+  const handleExportVcf = async () => {
+    try {
+      const response = await api.get('/contacts/export/vcf', { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'contacts.vcf');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Export vCard failed:', err);
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -167,6 +201,15 @@ const Dashboard = () => {
                   setCurrentPage(0); // Reset page on new search
                 }}
               />
+              <button className="btn" onClick={() => setIsImportModalOpen(true)}>
+                Import
+              </button>
+              <button className="btn" onClick={handleExportCsv}>
+                CSV
+              </button>
+              <button className="btn" onClick={handleExportVcf}>
+                vCard
+              </button>
               <button className="btn btn-primary" onClick={handleAddClick}>
                 + Add Contact
               </button>
@@ -265,12 +308,27 @@ const Dashboard = () => {
         contactToEdit={contactToEdit}
       />
       
-      <DeleteConfirmModal 
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={confirmDelete}
-        contactName={contactToDelete ? (contactToDelete.name || `${contactToDelete.firstName} ${contactToDelete.lastName}`) : ''}
-      />
+      {isDeleteModalOpen && (
+        <DeleteConfirmModal 
+          isOpen={true}
+          onClose={() => {
+            setIsDeleteModalOpen(false);
+            setContactToDelete(null);
+          }}
+          onConfirm={confirmDelete}
+          contactName={contactToDelete ? (contactToDelete.name || `${contactToDelete.firstName} ${contactToDelete.lastName}`) : ''}
+        />
+      )}
+
+      {isImportModalOpen && (
+        <ImportModal 
+          onClose={() => setIsImportModalOpen(false)} 
+          onSuccess={() => {
+            setIsImportModalOpen(false);
+            fetchContacts(searchQuery, currentPage);
+          }} 
+        />
+      )}
     </div>
   );
 };

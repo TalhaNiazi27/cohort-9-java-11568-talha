@@ -1,3 +1,60 @@
+# Contact Manager Project Plan
+
+# Week 5: Advanced Features (Import/Export) & Quality Control - Implementation Plan
+
+## Goal Description
+Implement Import and Export features for Contacts using CSV and vCard (.vcf) formats. Implement SonarQube code quality rules to ensure professional code standards.
+
+## Proposed Changes
+
+### Backend Changes
+
+#### [MODIFY] [pom.xml](file:///Users/apple/Documents/10%20Pearls%20InternShip/backend/pom.xml)
+- Add `opencsv` dependency for CSV parsing/writing.
+- Add `ez-vcard` dependency for vCard parsing/writing.
+
+#### [NEW] [ImportExportController.java](file:///Users/apple/Documents/10%20Pearls%20InternShip/backend/src/main/java/com/tenpearls/contactmanager/controller/ImportExportController.java)
+- Expose REST API endpoints:
+  - `POST /api/contacts/import` (accepts multipart/form-data with a file)
+  - `GET /api/contacts/export/csv`
+  - `GET /api/contacts/export/vcf`
+
+#### [NEW] [ImportExportService.java](file:///Users/apple/Documents/10%20Pearls%20InternShip/backend/src/main/java/com/tenpearls/contactmanager/service/ImportExportService.java)
+- Interface for import/export logic.
+
+#### [NEW] [ImportExportServiceImpl.java](file:///Users/apple/Documents/10%20Pearls%20InternShip/backend/src/main/java/com/tenpearls/contactmanager/service/ImportExportServiceImpl.java)
+- Implementation utilizing OpenCSV and ez-vcard to convert `Contact` entities to/from files.
+
+### Frontend Changes
+
+#### [MODIFY] [Dashboard.jsx](file:///Users/apple/Documents/10%20Pearls%20InternShip/frontend/src/pages/Dashboard.jsx)
+- Add "Export to CSV" and "Export to vCard" buttons in the action bar.
+- Add an "Import Contacts" button that opens an Import Modal.
+
+#### [NEW] [ImportModal.jsx](file:///Users/apple/Documents/10%20Pearls%20InternShip/frontend/src/components/ImportModal.jsx)
+- A drag-and-drop file upload modal.
+- Handles parsing selection and displaying success/error states.
+
+## Open Questions
+
+> [!IMPORTANT]
+> **Dependencies**: Are we okay using `opencsv` and `ez-vcard` for the backend parsing, or should everything be written from scratch?
+
+> [!WARNING]
+> **Duplicate Handling**: When importing, how should we handle duplicate contacts? Should we ignore them, update them, or just insert them as duplicates? My proposal is to just insert them as new records for simplicity unless specified otherwise.
+
+## Verification Plan
+
+### Automated Tests
+- Unit tests for `ImportExportServiceImpl` focusing on parsing logic.
+- Integration tests for `ImportExportController`.
+
+### Manual Verification
+- Manually upload a sample `.csv` and `.vcf` file from the React UI.
+- Export contacts and verify they open cleanly in Microsoft Excel and Apple Contacts.
+
+---
+
 # Contact Management System (CMS) Implementation Plan
 
 This project implements a secure, web-based contact management system using a Spring Boot backend, a SQL database, and a React.js frontend. It enables users to register, log in, manage their profile, and perform full CRUD operations on contacts with paginated listings, search filters, and import/export capabilities (CSV and vCard).
