@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import api from '../api/axiosConfig';
 import ModalWrapper from './ModalWrapper';
 
@@ -180,6 +180,19 @@ export const ChangePasswordModal = ({ isOpen, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const timerRef = useRef(null);
+
+  useEffect(() => {
+    if (!isOpen && timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -202,7 +215,7 @@ export const ChangePasswordModal = ({ isOpen, onClose }) => {
         newPassword: passwords.newPassword 
       });
       setSuccess(true);
-      setTimeout(() => {
+      timerRef.current = setTimeout(() => {
         onClose();
         setSuccess(false);
         setPasswords({ oldPassword: '', newPassword: '', confirmPassword: '' });

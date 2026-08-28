@@ -13,6 +13,7 @@ const ImportModal = ({ onClose, onSuccess }) => {
   const selectFile = (candidate) => {
     const name = candidate.name.toLowerCase();
     if (!ACCEPTED_EXTENSIONS.some(ext => name.endsWith(ext))) {
+      setFile(null);
       setError('Select a .csv or .vcf file.');
       return;
     }

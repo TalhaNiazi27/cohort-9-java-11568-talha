@@ -11,6 +11,7 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
   withCredentials: true, // Send cookies with every request
+  withXSRFToken: true, // Send XSRF token for cross-origin requests
   xsrfCookieName: 'XSRF-TOKEN', // The cookie name Spring Security uses
   xsrfHeaderName: 'X-XSRF-TOKEN', // The header name Spring Security expects
   timeout: 15000, // 15 seconds finite timeout

@@ -21,6 +21,8 @@ Enhance the UI/UX with professional polish (transitions, animations, loading sta
 > [!IMPORTANT]
 > **Aesthetics**: Are there any specific animations or styling effects (e.g., glassmorphism intensity, specific colors) you want prioritized for the final polish?
 
+<!-- separator -->
+
 > [!TIP]
 > **Presentation**: Do you know how much time you have for your final presentation? I can tailor the script length accordingly.
 
