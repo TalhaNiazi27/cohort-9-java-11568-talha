@@ -11,39 +11,41 @@ const isStorageAvailable = () => {
   }
 };
 
-const hasStorage = isStorageAvailable();
+const fallbackKeys = new Set();
+const hasGlobalStorage = isStorageAvailable();
 
 export const safeStorage = {
   getItem: (key) => {
-    if (hasStorage) {
-      try {
-        return window.localStorage.getItem(key);
-      } catch (e) {
-        return memoryStorage.get(key) || null;
-      }
+    if (!hasGlobalStorage || fallbackKeys.has(key)) {
+      return memoryStorage.get(key) || null;
     }
-    return memoryStorage.get(key) || null;
+    try {
+      return window.localStorage.getItem(key);
+    } catch (e) {
+      fallbackKeys.add(key);
+      return memoryStorage.get(key) || null;
+    }
   },
   setItem: (key, value) => {
-    if (hasStorage) {
+    memoryStorage.set(key, value);
+    if (hasGlobalStorage) {
       try {
         window.localStorage.setItem(key, value);
-        return;
+        fallbackKeys.delete(key);
       } catch (e) {
-        // Continue to fallback
+        fallbackKeys.add(key);
       }
     }
-    memoryStorage.set(key, value);
   },
   removeItem: (key) => {
-    if (hasStorage) {
+    memoryStorage.delete(key);
+    if (hasGlobalStorage) {
       try {
         window.localStorage.removeItem(key);
-        return;
+        fallbackKeys.delete(key);
       } catch (e) {
-        // Continue to fallback
+        fallbackKeys.add(key);
       }
     }
-    memoryStorage.delete(key);
   }
 };
