@@ -56,7 +56,7 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     @Transactional
-    public UserResponse register(RegisterRequest request) {
+    public RegistrationResponse register(RegisterRequest request) {
         log.info("Processing user registration request");
 
         // Validate that at least email or phone is present
@@ -94,7 +94,12 @@ public class UserServiceImpl implements UserService {
 
         log.info("User registered successfully with ID: {}", savedUser.getId());
 
-        return mapToUserResponse(savedUser);
+        // Perform auto-login to generate token
+        String loginId = hasEmail ? request.getEmail() : request.getPhone();
+        LoginRequest loginRequest = new LoginRequest(loginId, request.getPassword());
+        AuthResponse authResponse = login(loginRequest);
+
+        return new RegistrationResponse(mapToUserResponse(savedUser), authResponse);
     }
 
     /**

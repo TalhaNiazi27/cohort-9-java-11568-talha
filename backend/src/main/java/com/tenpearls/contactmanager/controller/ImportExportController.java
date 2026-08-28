@@ -6,6 +6,7 @@ import com.tenpearls.contactmanager.repository.ContactRepository;
 import com.tenpearls.contactmanager.repository.UserRepository;
 import com.tenpearls.contactmanager.service.ImportExportService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -96,8 +97,8 @@ public class ImportExportController {
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.parseMediaType("text/csv"));
-            headers.setContentDispositionFormData("attachment", "contacts.csv");
-            headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
+            headers.setContentDisposition(ContentDisposition.attachment().filename("contacts.csv").build());
+            headers.setCacheControl("private, no-store");
 
             log.info("Exported {} contacts to CSV for user: {}", contacts.size(), authentication.getName());
             return new ResponseEntity<>(csvBytes, headers, HttpStatus.OK);
@@ -122,8 +123,8 @@ public class ImportExportController {
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.parseMediaType("text/vcard"));
-            headers.setContentDispositionFormData("attachment", "contacts.vcf");
-            headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
+            headers.setContentDisposition(ContentDisposition.attachment().filename("contacts.vcf").build());
+            headers.setCacheControl("private, no-store");
 
             log.info("Exported {} contacts to vCard for user: {}", contacts.size(), authentication.getName());
             return new ResponseEntity<>(vcfBytes, headers, HttpStatus.OK);

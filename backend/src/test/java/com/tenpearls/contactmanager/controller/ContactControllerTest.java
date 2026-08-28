@@ -26,6 +26,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import org.springframework.boot.test.context.TestConfiguration;
@@ -42,8 +43,7 @@ class ContactControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @MockitoBean
     private ContactService contactService;
@@ -89,6 +89,7 @@ class ContactControllerTest {
         when(contactService.createContact(any(ContactRequest.class), anyString())).thenReturn(response);
 
         mockMvc.perform(post("/api/contacts")
+                        .with(csrf())
                         .header("Authorization", "Bearer mock_token")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -111,6 +112,7 @@ class ContactControllerTest {
                 .build();
 
         mockMvc.perform(post("/api/contacts")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized());
@@ -128,6 +130,7 @@ class ContactControllerTest {
                 .build();
 
         mockMvc.perform(post("/api/contacts")
+                        .with(csrf())
                         .header("Authorization", "Bearer mock_token")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -139,8 +142,8 @@ class ContactControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "user@example.com")
     void getContact_Success() throws Exception {
+        mockAuthentication();
         ContactResponse response = ContactResponse.builder()
                 .id(1L)
                 .firstName("John")
@@ -150,7 +153,8 @@ class ContactControllerTest {
 
         when(contactService.getContact(eq(1L), eq("user@example.com"))).thenReturn(response);
 
-        mockMvc.perform(get("/api/contacts/1"))
+        mockMvc.perform(get("/api/contacts/1")
+                        .header("Authorization", "Bearer mock_token"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1L))
                 .andExpect(jsonPath("$.firstName").value("John"))
@@ -168,12 +172,13 @@ class ContactControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "user@example.com")
     void getContact_NotFound_Returns404() throws Exception {
+        mockAuthentication();
         when(contactService.getContact(eq(999L), eq("user@example.com")))
                 .thenThrow(new com.tenpearls.contactmanager.exception.ResourceNotFoundException("Contact not found"));
 
-        mockMvc.perform(get("/api/contacts/999"))
+        mockMvc.perform(get("/api/contacts/999")
+                        .header("Authorization", "Bearer mock_token"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").value("Not Found"))
                 .andExpect(jsonPath("$.message").value("Contact not found"));
@@ -200,16 +205,16 @@ class ContactControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "user@example.com")
     void getContact_InvalidIdType_Returns400() throws Exception {
+        mockAuthentication();
         mockMvc.perform(get("/api/contacts/not-a-number")
                         .header("Authorization", "Bearer mock_token"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("Bad Request"));
     }
     @Test
-    @WithMockUser(username = "user@example.com")
     void updateContact_Success() throws Exception {
+        mockAuthentication();
         ContactRequest request = ContactRequest.builder()
                 .firstName("Jane")
                 .lastName("Doe")
@@ -226,6 +231,8 @@ class ContactControllerTest {
         when(contactService.updateContact(eq(1L), any(ContactRequest.class), eq("user@example.com"))).thenReturn(response);
 
         mockMvc.perform(put("/api/contacts/1")
+                        .with(csrf())
+                        .header("Authorization", "Bearer mock_token")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -243,15 +250,18 @@ class ContactControllerTest {
                 .build();
 
         mockMvc.perform(put("/api/contacts/1")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
-    @WithMockUser(username = "user@example.com")
     void deleteContact_Success() throws Exception {
-        mockMvc.perform(delete("/api/contacts/1"))
+        mockAuthentication();
+        mockMvc.perform(delete("/api/contacts/1")
+                        .with(csrf())
+                        .header("Authorization", "Bearer mock_token"))
                 .andExpect(status().isNoContent());
 
         verify(contactService, times(1)).deleteContact(eq(1L), eq("user@example.com"));
@@ -259,13 +269,14 @@ class ContactControllerTest {
 
     @Test
     void deleteContact_Unauthenticated_Returns401() throws Exception {
-        mockMvc.perform(delete("/api/contacts/1"))
+        mockMvc.perform(delete("/api/contacts/1")
+                        .with(csrf()))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
-    @WithMockUser(username = "user@example.com")
     void searchContacts_Success() throws Exception {
+        mockAuthentication();
         ContactResponse response = ContactResponse.builder()
                 .id(1L)
                 .firstName("John")
@@ -280,6 +291,7 @@ class ContactControllerTest {
         when(contactService.searchContacts(anyString(), anyInt(), anyInt(), eq("user@example.com"))).thenReturn(pageResponse);
 
         mockMvc.perform(get("/api/contacts")
+                        .header("Authorization", "Bearer mock_token")
                         .param("search", "John")
                         .param("page", "0")
                         .param("size", "10"))

@@ -43,14 +43,9 @@ public class AuthController {
      */
     @PostMapping("/register")
     public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest registerRequest, HttpServletResponse response) {
-        UserResponse userResponse = userService.register(registerRequest);
+        RegistrationResponse registrationResponse = userService.register(registerRequest);
         
-        // Auto-login after registration by generating token
-        String loginId = (registerRequest.getEmail() != null && !registerRequest.getEmail().trim().isEmpty()) 
-                ? registerRequest.getEmail() 
-                : registerRequest.getPhone();
-        LoginRequest loginRequest = new LoginRequest(loginId, registerRequest.getPassword());
-        AuthResponse authResponse = userService.login(loginRequest);
+        AuthResponse authResponse = registrationResponse.getAuthResponse();
         
         ResponseCookie cookie = ResponseCookie.from("jwt", authResponse.getToken())
                 .httpOnly(true)
@@ -62,7 +57,7 @@ public class AuthController {
                 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
-                .body(userResponse);
+                .body(registrationResponse.getUserResponse());
     }
 
     /**

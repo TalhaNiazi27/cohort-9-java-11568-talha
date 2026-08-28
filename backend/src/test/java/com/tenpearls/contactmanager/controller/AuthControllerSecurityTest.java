@@ -20,6 +20,7 @@ import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 
 import org.springframework.context.annotation.Import;
 import com.tenpearls.contactmanager.security.SecurityConfig;
@@ -36,8 +37,7 @@ class AuthControllerSecurityTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @MockitoBean
     private UserService userService;
@@ -61,6 +61,7 @@ class AuthControllerSecurityTest {
         ChangePasswordRequest changePasswordRequest = new ChangePasswordRequest("password123", "newPassword123");
 
         mockMvc.perform(post("/api/auth/change-password")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(changePasswordRequest)))
                 .andExpect(status().isUnauthorized());

@@ -58,7 +58,14 @@ class AuthControllerTest {
 
     @Test
     void register_Success() throws Exception {
-        when(userService.register(any(RegisterRequest.class))).thenReturn(userResponse);
+        AuthResponse authResponse = AuthResponse.builder()
+                .token("mock_token")
+                .id(1L)
+                .email("user@example.com")
+                .build();
+                
+        RegistrationResponse registrationResponse = new RegistrationResponse(userResponse, authResponse);
+        when(userService.register(any(RegisterRequest.class))).thenReturn(registrationResponse);
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -90,8 +97,12 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").value("mockJwtToken"))
-                .andExpect(jsonPath("$.id").value(1L));
+                .andExpect(cookie().exists("jwt"))
+                .andExpect(cookie().value("jwt", "mockJwtToken"))
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.email").value("user@example.com"))
+                .andExpect(jsonPath("$.phone").value("1234567890"))
+                .andExpect(jsonPath("$.token").doesNotExist());
 
         verify(userService, times(1)).login(any(LoginRequest.class));
     }
