@@ -4,6 +4,7 @@ import com.tenpearls.contactmanager.dto.AuthResponse;
 import com.tenpearls.contactmanager.dto.ChangePasswordRequest;
 import com.tenpearls.contactmanager.dto.LoginRequest;
 import com.tenpearls.contactmanager.dto.RegisterRequest;
+import com.tenpearls.contactmanager.dto.RegistrationResponse;
 import com.tenpearls.contactmanager.dto.UserResponse;
 
 /**
@@ -18,7 +19,7 @@ public interface UserService {
      * @param request the registration details
      * @return the registered user response details
      */
-    UserResponse register(RegisterRequest request);
+    RegistrationResponse register(RegisterRequest request);
 
     /**
      * Authenticates a user using their username (email or phone) and password.

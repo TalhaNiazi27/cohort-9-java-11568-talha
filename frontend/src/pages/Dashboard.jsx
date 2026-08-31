@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axiosConfig';
 import { ContactModal, DeleteConfirmModal } from '../components/ContactModals';
+import ImportModal from '../components/ImportModal';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -19,12 +20,49 @@ const Dashboard = () => {
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [contactToEdit, setContactToEdit] = useState(null);
   const [contactToDelete, setContactToDelete] = useState(null);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
+  const handleExportCsv = async () => {
+    try {
+      const response = await api.get('/contacts/export/csv', { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'contacts.csv');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Export CSV failed:', err);
+    }
+  };
+
+  const handleExportVcf = async () => {
+    try {
+      const response = await api.get('/contacts/export/vcf', { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'contacts.vcf');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Export vCard failed:', err);
+    }
+  };
+
+  const handleLogout = async () => {
+    const result = await logout();
+    if (result.success) {
+      navigate('/login');
+    } else {
+      alert('Failed to log out. Please check your connection and try again.');
+    }
   };
 
   const fetchContacts = async (query = '', page = 0, isActive = { current: true }) => {
@@ -33,7 +71,7 @@ const Dashboard = () => {
       setError(null);
       let url = `/contacts?page=${page}&size=10`;
       if (query.trim() !== '') {
-        url = `/contacts/search?q=${encodeURIComponent(query)}&page=${page}&size=10`;
+        url = `/contacts?search=${encodeURIComponent(query)}&page=${page}&size=10`;
       }
       const response = await api.get(url);
       
@@ -167,6 +205,15 @@ const Dashboard = () => {
                   setCurrentPage(0); // Reset page on new search
                 }}
               />
+              <button className="btn" onClick={() => setIsImportModalOpen(true)}>
+                Import
+              </button>
+              <button className="btn" onClick={handleExportCsv}>
+                CSV
+              </button>
+              <button className="btn" onClick={handleExportVcf}>
+                vCard
+              </button>
               <button className="btn btn-primary" onClick={handleAddClick}>
                 + Add Contact
               </button>
@@ -179,6 +226,7 @@ const Dashboard = () => {
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
                   <th style={{ padding: '1rem' }}>Name</th>
+                  <th style={{ padding: '1rem' }}>Title</th>
                   <th style={{ padding: '1rem' }}>Email</th>
                   <th style={{ padding: '1rem' }}>Phone</th>
                   <th style={{ padding: '1rem' }}>Label</th>
@@ -187,14 +235,22 @@ const Dashboard = () => {
               </thead>
               <tbody>
                 {loading ? (
-                  <tr>
-                    <td colSpan="5" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-                      Loading contacts...
-                    </td>
-                  </tr>
+                  Array.from({ length: 5 }).map((_, index) => (
+                    <tr key={index} className="skeleton-row" style={{ borderBottom: '1px solid var(--glass-border)' }}>
+                      <td><div className="skeleton skeleton-text" style={{ width: '70%' }}></div></td>
+                      <td><div className="skeleton skeleton-text" style={{ width: '50%' }}></div></td>
+                      <td><div className="skeleton skeleton-text" style={{ width: '85%' }}></div></td>
+                      <td><div className="skeleton skeleton-text" style={{ width: '60%' }}></div></td>
+                      <td><div className="skeleton skeleton-text" style={{ width: '40%', borderRadius: '999px', height: '1.25rem' }}></div></td>
+                      <td style={{ textAlign: 'right' }}>
+                        <div className="skeleton skeleton-text" style={{ width: '40px', display: 'inline-block', marginRight: '0.5rem', height: '1.5rem' }}></div>
+                        <div className="skeleton skeleton-text" style={{ width: '50px', display: 'inline-block', height: '1.5rem' }}></div>
+                      </td>
+                    </tr>
+                  ))
                 ) : error ? (
                   <tr>
-                    <td colSpan="5" style={{ padding: '2rem', textAlign: 'center', color: 'var(--danger)' }}>
+                    <td colSpan="6" style={{ padding: '2rem', textAlign: 'center', color: 'var(--danger)' }}>
                       <p style={{ marginBottom: '1rem' }}>{error}</p>
                       <button className="btn btn-primary" onClick={() => fetchContacts(searchQuery, currentPage)}>
                         Retry
@@ -203,7 +259,7 @@ const Dashboard = () => {
                   </tr>
                 ) : contacts.length === 0 ? (
                   <tr>
-                    <td colSpan="5" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                    <td colSpan="6" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
                       No contacts found. Click "Add Contact" to get started!
                     </td>
                   </tr>
@@ -211,6 +267,7 @@ const Dashboard = () => {
                   contacts.map((contact) => (
                     <tr key={contact.id} style={{ borderBottom: '1px solid var(--glass-border)' }}>
                       <td style={{ padding: '1rem' }}>{contact.name || `${contact.firstName} ${contact.lastName}`}</td>
+                      <td style={{ padding: '1rem' }}>{contact.title || '-'}</td>
                       <td style={{ padding: '1rem' }}>{contact.emails && contact.emails.length > 0 ? contact.emails[0].emailAddress : ''}</td>
                       <td style={{ padding: '1rem' }}>{contact.phones && contact.phones.length > 0 ? contact.phones[0].phoneNumber : ''}</td>
                       <td style={{ padding: '1rem' }}>
@@ -265,12 +322,27 @@ const Dashboard = () => {
         contactToEdit={contactToEdit}
       />
       
-      <DeleteConfirmModal 
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={confirmDelete}
-        contactName={contactToDelete ? (contactToDelete.name || `${contactToDelete.firstName} ${contactToDelete.lastName}`) : ''}
-      />
+      {isDeleteModalOpen && (
+        <DeleteConfirmModal 
+          isOpen={true}
+          onClose={() => {
+            setIsDeleteModalOpen(false);
+            setContactToDelete(null);
+          }}
+          onConfirm={confirmDelete}
+          contactName={contactToDelete ? (contactToDelete.name || `${contactToDelete.firstName} ${contactToDelete.lastName}`) : ''}
+        />
+      )}
+
+      {isImportModalOpen && (
+        <ImportModal 
+          onClose={() => setIsImportModalOpen(false)} 
+          onSuccess={() => {
+            setIsImportModalOpen(false);
+            fetchContacts(searchQuery, currentPage);
+          }} 
+        />
+      )}
     </div>
   );
 };

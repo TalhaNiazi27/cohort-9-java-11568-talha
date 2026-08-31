@@ -65,13 +65,38 @@ class UserServiceImplTest {
         when(userRepository.existsByPhone(anyString())).thenReturn(false);
         when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
         when(userRepository.saveAndFlush(any(User.class))).thenReturn(sampleUser);
+        
+        Authentication authentication = mock(Authentication.class);
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(authentication);
+        when(tokenProvider.generateToken(any(Authentication.class))).thenReturn("mockToken");
+        when(userRepository.findByEmailOrPhone(anyString(), anyString())).thenReturn(Optional.of(sampleUser));
 
-        UserResponse response = userService.register(registerRequest);
+        RegistrationResponse response = userService.register(registerRequest);
 
         assertNotNull(response);
-        assertEquals(sampleUser.getEmail(), response.getEmail());
-        assertEquals(sampleUser.getPhone(), response.getPhone());
+        assertNotNull(response.getUserResponse());
+        assertNotNull(response.getAuthResponse());
+        assertEquals(sampleUser.getEmail(), response.getUserResponse().getEmail());
+        assertEquals(sampleUser.getPhone(), response.getUserResponse().getPhone());
+        assertEquals("mockToken", response.getAuthResponse().getToken());
         verify(userRepository, times(1)).saveAndFlush(any(User.class));
+    }
+    
+    @Test
+    void register_Failure_LoginFailsRollsBack() {
+        when(userRepository.existsByEmail(anyString())).thenReturn(false);
+        when(userRepository.existsByPhone(anyString())).thenReturn(false);
+        when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
+        when(userRepository.saveAndFlush(any(User.class))).thenReturn(sampleUser);
+        
+        // Force authentication failure
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                .thenThrow(new org.springframework.security.authentication.BadCredentialsException("Bad credentials"));
+
+        assertThrows(org.springframework.security.authentication.BadCredentialsException.class, () -> userService.register(registerRequest));
+        
+        verify(userRepository, times(1)).saveAndFlush(any(User.class));
+        // Transactional rollback handles the reversion, but we verify the exception was thrown as expected.
     }
 
     @Test

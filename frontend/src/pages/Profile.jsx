@@ -8,9 +8,13 @@ const Profile = () => {
   const navigate = useNavigate();
   const [isPasswordModalOpen, setIsPasswordModalOpen] = React.useState(false);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
+  const handleLogout = async () => {
+    const result = await logout();
+    if (result.success) {
+      navigate('/login');
+    } else {
+      alert('Failed to log out. Please check your connection and try again.');
+    }
   };
 
   if (!user) {
