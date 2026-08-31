@@ -7,6 +7,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
+import org.springframework.beans.factory.annotation.Value;
+import jakarta.servlet.http.HttpServletResponse;
 import java.security.Principal;
 
 /**
@@ -18,14 +22,17 @@ import java.security.Principal;
 public class AuthController {
 
     private final UserService userService;
+    private final boolean cookieSecure;
 
     /**
      * Constructs the AuthController with the required UserService.
      *
      * @param userService the user service handling authentication business logic
      */
-    public AuthController(UserService userService) {
+    public AuthController(UserService userService, 
+                          @Value("${app.jwt.cookie-secure:false}") boolean cookieSecure) {
         this.userService = userService;
+        this.cookieSecure = cookieSecure;
     }
 
     /**
@@ -35,9 +42,27 @@ public class AuthController {
      * @return the registered user details
      */
     @PostMapping("/register")
-    public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest registerRequest) {
-        UserResponse response = userService.register(registerRequest);
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest registerRequest, HttpServletResponse response) {
+        UserResponse userResponse = userService.register(registerRequest);
+        
+        // Auto-login after registration by generating token
+        String loginId = (registerRequest.getEmail() != null && !registerRequest.getEmail().trim().isEmpty()) 
+                ? registerRequest.getEmail() 
+                : registerRequest.getPhone();
+        LoginRequest loginRequest = new LoginRequest(loginId, registerRequest.getPassword());
+        AuthResponse authResponse = userService.login(loginRequest);
+        
+        ResponseCookie cookie = ResponseCookie.from("jwt", authResponse.getToken())
+                .httpOnly(true)
+                .secure(cookieSecure) // Configurable secure flag
+                .path("/")
+                .maxAge(24 * 60 * 60) // 24 hours
+                .sameSite("Lax")
+                .build();
+                
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body(userResponse);
     }
 
     /**
@@ -47,9 +72,47 @@ public class AuthController {
      * @return the authentication response containing JWT token
      */
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
-        AuthResponse response = userService.login(loginRequest);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<UserResponse> login(@Valid @RequestBody LoginRequest loginRequest, HttpServletResponse response) {
+        AuthResponse authResponse = userService.login(loginRequest);
+        
+        ResponseCookie cookie = ResponseCookie.from("jwt", authResponse.getToken())
+                .httpOnly(true)
+                .secure(cookieSecure) // Configurable secure flag
+                .path("/")
+                .maxAge(24 * 60 * 60) // 24 hours
+                .sameSite("Lax")
+                .build();
+                
+        UserResponse userResponse = UserResponse.builder()
+                .id(authResponse.getId())
+                .email(authResponse.getEmail())
+                .phone(authResponse.getPhone())
+                .build();
+                
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body(userResponse);
+    }
+
+    /**
+     * Logs out the user by clearing the JWT cookie.
+     *
+     * @param response the HTTP response to clear the cookie
+     * @return success message
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(HttpServletResponse response) {
+        ResponseCookie cookie = ResponseCookie.from("jwt", "")
+                .httpOnly(true)
+                .secure(cookieSecure)
+                .path("/")
+                .maxAge(0) // Expire immediately
+                .sameSite("Lax")
+                .build();
+                
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body("Logged out successfully");
     }
 
     /**
@@ -83,5 +146,15 @@ public class AuthController {
         }
         userService.changePassword(principal.getName(), changePasswordRequest);
         return ResponseEntity.ok("Password changed successfully");
+    }
+
+    /**
+     * Bootstraps the CSRF token for SPAs.
+     *
+     * @return 204 No Content
+     */
+    @GetMapping("/csrf")
+    public ResponseEntity<Void> getCsrfToken() {
+        return ResponseEntity.noContent().build();
     }
 }

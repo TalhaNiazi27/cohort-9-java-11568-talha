@@ -112,6 +112,24 @@ public class GlobalExceptionHandler {
         throw ex;
     }
 
+    @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleTypeMismatchException(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException ex, WebRequest request) {
+        log.error("MethodArgumentTypeMismatchException: {}", ex.getMessage());
+        return buildResponse(HttpStatus.BAD_REQUEST, "Bad Request", "Invalid parameter: " + ex.getValue(), request);
+    }
+
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolationException(org.springframework.dao.DataIntegrityViolationException ex, WebRequest request) {
+        log.warn("DataIntegrityViolationException: {}", ex.getMessage());
+        return buildResponse(HttpStatus.CONFLICT, "Conflict", "The requested operation violates a data constraint", request);
+    }
+
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public void handleAccessDeniedException(org.springframework.security.access.AccessDeniedException ex) {
+        // Rethrow so ExceptionTranslationFilter can handle it and return 403
+        throw ex;
+    }
+
     // Global catch-all handler for unexpected issues
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGlobalException(Exception ex, WebRequest request) {

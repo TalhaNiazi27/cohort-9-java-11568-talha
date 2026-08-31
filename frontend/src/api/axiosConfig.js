@@ -10,15 +10,15 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // Send cookies with every request
+  xsrfCookieName: 'XSRF-TOKEN', // The cookie name Spring Security uses
+  xsrfHeaderName: 'X-XSRF-TOKEN', // The header name Spring Security expects
 });
 
-// Request Interceptor: Attach the JWT token to every request if it exists
+// Request Interceptor: No longer needed for Bearer tokens as we use HttpOnly cookies.
+// We keep the interceptor shell in case future config is needed.
 api.interceptors.request.use(
   (config) => {
-    const token = safeStorage.getItem('token');
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
-    }
     return config;
   },
   (error) => {
@@ -34,9 +34,8 @@ api.interceptors.response.use(
   (error) => {
     // If we receive a 401 (Unauthorized), it means the token is expired or invalid
     if (error.response && error.response.status === 401) {
-      // Clear localStorage and redirect to login (if not already on login)
+      // Clear localStorage user and redirect to login (if not already on login)
       if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
-        safeStorage.removeItem('token');
         safeStorage.removeItem('user');
         window.location.href = '/login';
       }

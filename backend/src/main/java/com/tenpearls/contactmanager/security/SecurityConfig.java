@@ -1,7 +1,6 @@
 package com.tenpearls.contactmanager.security;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tenpearls.contactmanager.exception.ErrorResponse;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,13 +15,15 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.Collections;
 
 @Configuration
 @EnableWebSecurity
@@ -30,7 +31,6 @@ public class SecurityConfig {
 
     private final JwtTokenProvider tokenProvider;
     private final CustomUserDetailsService customUserDetailsService;
-    private final ObjectMapper objectMapper;
 
     @Value("${spring.h2.console.enabled:false}")
     private boolean h2ConsoleEnabled;
@@ -40,15 +40,13 @@ public class SecurityConfig {
      *
      * @param tokenProvider              the JWT token provider
      * @param customUserDetailsService   the custom user details service
-     * @param objectMapper               the Spring-configured ObjectMapper bean
+     * @param jsonMapper                 the Spring-configured JsonMapper bean
      */
     public SecurityConfig(
             JwtTokenProvider tokenProvider,
-            CustomUserDetailsService customUserDetailsService,
-            ObjectMapper objectMapper) {
+            CustomUserDetailsService customUserDetailsService) {
         this.tokenProvider = tokenProvider;
         this.customUserDetailsService = customUserDetailsService;
-        this.objectMapper = objectMapper;
     }
 
     @Bean
@@ -72,9 +70,16 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         JwtAuthenticationFilter jwtAuthenticationFilter = new JwtAuthenticationFilter(tokenProvider, customUserDetailsService);
 
+        CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
+        // Set the name of the attribute the CsrfToken will be populated on
+        requestHandler.setCsrfRequestAttributeName("_csrf");
+        
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(csrf -> csrf.disable()) // Stateless authorization
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .csrfTokenRequestHandler(requestHandler)
+                )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         if (h2ConsoleEnabled) {
@@ -82,7 +87,7 @@ public class SecurityConfig {
         }
 
         http.authorizeHttpRequests(auth -> {
-            auth.requestMatchers("/api/auth/register", "/api/auth/login").permitAll();
+            auth.requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/csrf").permitAll();
             if (h2ConsoleEnabled) {
                 auth.requestMatchers("/h2-console/**").permitAll();
             }
@@ -92,41 +97,18 @@ public class SecurityConfig {
                         .authenticationEntryPoint((request, response, authException) -> {
                             response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED);
                             response.setContentType("application/json");
-                            ErrorResponse errorResponse = ErrorResponse.builder()
-                                    .timestamp(LocalDateTime.now())
-                                    .status(401)
-                                    .error("Unauthorized")
-                                    .message("Full authentication is required to access this resource")
-                                    .path(request.getRequestURI())
-                                    .build();
-                            String json;
-                            try {
-                                json = objectMapper.writeValueAsString(errorResponse);
-                            } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
-                                json = "{\"status\":401,\"error\":\"Unauthorized\",\"message\":\"Full authentication is required\"}";
-                            }
+                            String json = String.format("{\"timestamp\":\"%s\",\"status\":401,\"error\":\"Unauthorized\",\"message\":\"Full authentication is required to access this resource\",\"path\":\"%s\"}", LocalDateTime.now().toString(), request.getRequestURI());
                             response.getWriter().write(json);
                         })
                         .accessDeniedHandler((request, response, accessDeniedException) -> {
                             response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN);
                             response.setContentType("application/json");
-                            ErrorResponse errorResponse = ErrorResponse.builder()
-                                    .timestamp(LocalDateTime.now())
-                                    .status(403)
-                                    .error("Forbidden")
-                                    .message("Access denied")
-                                    .path(request.getRequestURI())
-                                    .build();
-                            String json;
-                            try {
-                                json = objectMapper.writeValueAsString(errorResponse);
-                            } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
-                                json = "{\"status\":403,\"error\":\"Forbidden\",\"message\":\"Access denied\"}";
-                            }
+                            String json = String.format("{\"timestamp\":\"%s\",\"status\":403,\"error\":\"Forbidden\",\"message\":\"Access denied\",\"path\":\"%s\"}", LocalDateTime.now().toString(), request.getRequestURI());
                             response.getWriter().write(json);
                         })
                 )
                 .authenticationProvider(authenticationProvider())
+                .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -138,8 +120,8 @@ public class SecurityConfig {
         // Allow common React local dev environments (Vite = 5173, Create-React-App = 3000)
         configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://localhost:3000"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Cache-Control", "Accept"));
-        configuration.setExposedHeaders(Collections.singletonList("Authorization"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Cache-Control", "Accept", "X-XSRF-TOKEN"));
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "X-XSRF-TOKEN"));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

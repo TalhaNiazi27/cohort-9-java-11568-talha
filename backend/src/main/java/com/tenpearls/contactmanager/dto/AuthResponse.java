@@ -1,6 +1,7 @@
 package com.tenpearls.contactmanager.dto;
 
 import lombok.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Data
 @NoArgsConstructor
@@ -8,6 +9,7 @@ import lombok.*;
 @Builder
 @ToString(exclude = "token")
 public class AuthResponse {
+    @JsonIgnore
     private String token;
     @Builder.Default
     private String tokenType = "Bearer";

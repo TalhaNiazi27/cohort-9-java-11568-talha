@@ -2,6 +2,7 @@ package com.tenpearls.contactmanager.security;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -82,6 +83,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      * @return the JWT token string, or null if not found
      */
     private String getJwtFromRequest(HttpServletRequest request) {
+        // 1. Try to extract from cookies
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if ("jwt".equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
+        }
+        
+        // 2. Fallback to Authorization header
         String bearerToken = request.getHeader("Authorization");
         if (StringUtils.hasText(bearerToken) && bearerToken.regionMatches(true, 0, "Bearer ", 0, 7)) {
             return bearerToken.substring(7);

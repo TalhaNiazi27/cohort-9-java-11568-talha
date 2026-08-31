@@ -1,10 +1,12 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { ChangePasswordModal } from '../components/ContactModals';
 
 const Profile = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = React.useState(false);
 
   const handleLogout = () => {
     logout();
@@ -40,11 +42,22 @@ const Profile = () => {
         </div>
 
         <div style={{ display: 'flex', gap: '1rem' }}>
-          <button className="btn btn-danger" onClick={handleLogout} style={{ width: '100%' }}>
+          <button className="btn" onClick={() => navigate('/dashboard')} style={{ flex: 1, backgroundColor: 'var(--accent-primary)', color: 'white', border: 'none' }}>
+            Dashboard
+          </button>
+          <button className="btn" onClick={() => setIsPasswordModalOpen(true)} style={{ flex: 1, backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
+            Change Password
+          </button>
+          <button className="btn btn-danger" onClick={handleLogout} style={{ flex: 1 }}>
             Sign Out
           </button>
         </div>
       </div>
+
+      <ChangePasswordModal 
+        isOpen={isPasswordModalOpen} 
+        onClose={() => setIsPasswordModalOpen(false)} 
+      />
     </div>
   );
 };

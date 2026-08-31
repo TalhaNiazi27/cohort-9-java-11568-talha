@@ -27,12 +27,18 @@ const Register = () => {
     }
 
     setIsLoading(true);
-    const result = await register({ email, phone, password });
-    
-    if (result.success) {
-      navigate('/login'); // Redirect to login on success
-    } else {
-      setError(result.message);
+    try {
+      const result = await register({ email, phone, password });
+      
+      if (result.success) {
+        navigate('/dashboard'); // Redirect to dashboard on success
+      } else {
+        setError(result.message);
+      }
+    } catch (err) {
+      console.error('Unexpected error during registration:', err);
+      setError('An unexpected error occurred. Please try again later.');
+    } finally {
       setIsLoading(false);
     }
   };
@@ -40,7 +46,10 @@ const Register = () => {
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', padding: '1rem' }}>
       <div className="glass-card animate-fade-in" style={{ width: '100%', maxWidth: '400px' }}>
-        <h2 style={{ textAlign: 'center', marginBottom: '1.5rem', fontSize: '1.5rem' }}>Create Account</h2>
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--accent-primary)', marginBottom: '0.5rem' }}>Lumina</h1>
+          <h2 style={{ fontSize: '1.25rem', color: 'var(--text-primary)' }}>Create Account</h2>
+        </div>
         
         {error && (
           <div style={{ 
@@ -61,6 +70,7 @@ const Register = () => {
             <input
               id="email"
               type="email"
+              autoComplete="email"
               className="input-field"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -73,6 +83,7 @@ const Register = () => {
             <input
               id="phone"
               type="tel"
+              autoComplete="tel"
               className="input-field"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
