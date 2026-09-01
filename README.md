@@ -1,56 +1,104 @@
-# Contact Management System
+# 📇 Contact Management System (CMS)
 
-A full-stack web application for securely managing contacts, built as a final assignment for the 10Pearls Java Fullstack Internship (Cohort 9) by Talha Niazi.
+![Version](https://img.shields.io/badge/version-1.0.0-blue) ![Java](https://img.shields.io/badge/Java-17-orange) ![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.1-brightgreen) ![React](https://img.shields.io/badge/React-18-61DAFB) ![Vite](https://img.shields.io/badge/Vite-5.0-646CFF) 
 
-## 🚀 Features
+A secure, full-stack, web-based contact management system built as the final assignment for the **10Pearls Java Fullstack Internship (Cohort 9)** by **Talha Niazi**.
 
-- **User Authentication**: Secure Registration and Login using JWT stored in HttpOnly cookies.
-- **Contact Management**: Create, Read, Update, and Delete contacts with support for multiple phone numbers and emails per contact.
-- **Search & Pagination**: Server-side pagination and real-time search filtering.
-- **Import/Export**: Bulk import and export contacts using `.csv` and `.vcf` (vCard) formats.
-- **Security**: Robust protection against CSRF and XSS attacks, with strict backend validation.
-- **Modern UI**: A responsive, glassmorphism-styled dashboard built with React.
+This application allows users to register, securely log in, manage their profile, and perform full CRUD (Create, Read, Update, Delete) operations on their contacts with paginated listings, search filters, and import/export capabilities.
 
-## 🛠️ Tech Stack
+---
+
+## 🚀 Key Features
+
+* **User Authentication**: Secure Registration, Login, and Password Change mechanisms using stateless JWTs stored securely in `HttpOnly` cookies.
+* **Comprehensive Contact Management**: Full CRUD capabilities for contacts. Each contact can have multiple emails (Work, Personal) and multiple phone numbers (Home, Mobile).
+* **Search & Pagination**: Server-side pagination and real-time search filtering ensure the dashboard remains blazing fast even with hundreds of contacts.
+* **Bulk Import & Export**: Users can easily export their contacts to `.csv` or `.vcf` (vCard) files, and bulk-import contacts using a drag-and-drop file uploader.
+* **Modern, Polished UI/UX**: Designed with a responsive, premium Glassmorphism aesthetic. Includes subtle micro-animations, loading skeletons, and interactive hover states.
+
+---
+
+## 🏆 Internship Requirements Achieved
+
+This project was meticulously built to adhere to the strict guidelines set forth by the internship:
+* **CodeRabbit Strict Guidelines**: Implemented a global `@RestControllerAdvice` exception handler. All potentially failing operations (database queries, network requests, JSON parsing, file I/O) are properly wrapped, validated, and safely managed without leaking stack traces.
+* **SonarQube Quality Passes**: The codebase has been rigorously tested and refactored to resolve code smells, eliminate duplicate declarations, and strictly enforce Object-Oriented Principles (OOP).
+* **Advanced Security**: Robust protection against CSRF and XSS attacks. The backend issues an `XSRF-TOKEN` cookie, which the Axios frontend automatically reads and returns in the `X-XSRF-TOKEN` header.
+
+---
+
+## 🛠️ Technology Stack
 
 ### Backend
-- **Java 17 & Spring Boot 3**
-- **Spring Security** (Stateless JWT Authentication, CSRF Protection)
-- **Spring Data JPA & Hibernate**
-- **H2 In-Memory Database** (for easy local setup)
-- **OpenCSV & Ezvcard** (for Import/Export processing)
+* **Language & Framework**: Java 17, Spring Boot 3
+* **Security**: Spring Security (Stateless JWT Authentication, CSRF Protection)
+* **Data Access**: Spring Data JPA & Hibernate
+* **Database**: H2 In-Memory Database (zero-config local setup)
+* **Libraries**: OpenCSV & Ezvcard (for data processing), Lombok
 
 ### Frontend
-- **React.js (Vite)**
-- **Axios** (Configured for credentials and XSRF tokens)
-- **Custom CSS** (CSS Variables, Flexbox, Animations)
+* **Framework**: React.js (Bootstrapped with Vite)
+* **HTTP Client**: Axios (Configured for credentials and XSRF headers)
+* **Styling**: Vanilla CSS with comprehensive CSS Variables (Light/Dark themes, Glassmorphism, animations)
 
-## ⚙️ Getting Started
+---
+
+## 🗄️ Database Schema & Relational Integrity
+
+The backend utilizes a robust relational schema mapped via JPA/Hibernate. It uses cascading deletes (`orphanRemoval = true`) to ensure no orphaned records remain in the database when a user or contact is deleted.
+
+* `USERS` (1) ➔ `CONTACTS` (Many)
+* `CONTACTS` (1) ➔ `EMAILS` (Many)
+* `CONTACTS` (1) ➔ `PHONES` (Many)
+
+---
+
+## 📡 REST API Reference
+
+### Authentication
+* `POST /api/auth/register` - Register a new account
+* `POST /api/auth/login` - Authenticate and receive `HttpOnly` JWT cookie
+* `POST /api/auth/logout` - Clear authentication cookie
+* `GET /api/auth/me` - Retrieve authenticated user's profile
+* `POST /api/auth/change-password` - Update user password
+
+### Contacts
+* `GET /api/contacts?page=0&size=10&search=...` - Retrieve paginated/searchable contacts
+* `POST /api/contacts` - Create a new contact
+* `GET /api/contacts/{id}` - Retrieve a specific contact
+* `PUT /api/contacts/{id}` - Update a contact's details
+* `DELETE /api/contacts/{id}` - Delete a contact
+
+### Import / Export
+* `GET /api/contacts/export/csv` - Download contacts as CSV
+* `GET /api/contacts/export/vcf` - Download contacts as vCard
+* `POST /api/contacts/import` - Upload a CSV/VCF file to bulk import
+
+---
+
+## ⚙️ Getting Started (Local Development)
 
 ### Prerequisites
-- Java 17+ installed
-- Node.js 18+ installed
-- Maven (optional, wrapper is included)
+* Java 17+ installed
+* Node.js 18+ installed
 
-### Running the Backend
-
-1. Navigate to the backend directory:
+### 1. Running the Backend
+1. Open a terminal and navigate to the backend folder:
    ```bash
    cd backend
    ```
-2. Run the Spring Boot application using the Maven wrapper:
+2. Run the Spring Boot application (using the included Maven wrapper):
    ```bash
    ./mvnw spring-boot:run
    ```
-3. The backend API will start on `http://localhost:8080`.
+3. The API will start on `http://localhost:8080`.
 
-### Running the Frontend
-
-1. Navigate to the frontend directory:
+### 2. Running the Frontend
+1. Open a new terminal window and navigate to the frontend folder:
    ```bash
    cd frontend
    ```
-2. Install the dependencies:
+2. Install the Node dependencies:
    ```bash
    npm install
    ```
@@ -58,20 +106,15 @@ A full-stack web application for securely managing contacts, built as a final as
    ```bash
    npm run dev
    ```
-4. Open your browser and navigate to the URL provided by Vite (usually `http://localhost:5173`).
+4. Open your browser and navigate to `http://localhost:5173`.
 
-## 🏗️ Architecture Highlights
-
-- **Cookie-Based Authentication**: JWTs are stored in HTTP-Only, Secure cookies rather than LocalStorage to prevent XSS attacks.
-- **CSRF Tokens**: The backend issues an `XSRF-TOKEN` cookie, which the Axios frontend automatically reads and returns in the `X-XSRF-TOKEN` header for all state-changing requests.
-- **Global Exception Handling**: A centralized `@RestControllerAdvice` ensures consistent and secure JSON error responses across the entire API, preventing stack-trace leaks.
-- **Relational Integrity**: The database uses strict foreign key constraints with orphan removal to ensure clean deletion of nested contact details (emails and phones).
+---
 
 ## 🧪 Testing
 
-The backend includes a comprehensive suite of JUnit 5 tests covering Repositories, Services, and Controllers (with Spring Security MockMvc).
+The backend includes a comprehensive suite of **40+ JUnit 5 Unit & Integration Tests** covering Repositories, Services, and Controllers (utilizing Spring Security MockMvc).
 
-To run the test suite:
+To execute the test suite and verify 0% errors, run:
 ```bash
 cd backend
 ./mvnw test
